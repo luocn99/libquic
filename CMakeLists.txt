@@ -481,11 +481,11 @@ add_library(
 )
 target_link_libraries(quic ${BASE_ARCH_LIBRARIES} ssl crypto protobuf)
 
-#add_executable(
-#	test_quic_server
-#
-#	custom/main.cc
-#)
+add_executable(
+	test_quic_reverse_proxy
+
+	custom/reverse_proxy.cc
+)
 
 # XXX(serialx): Not sure if this is safe, since our CFLAGS contaminate boringssl build
 add_subdirectory(boringssl)
