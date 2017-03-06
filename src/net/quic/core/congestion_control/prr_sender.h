@@ -9,6 +9,7 @@
 
 #include <stddef.h>
 
+#include "net/base/net_export.h"
 #include "net/quic/core/quic_bandwidth.h"
 #include "net/quic/core/quic_time.h"
 
@@ -20,7 +21,7 @@ class NET_EXPORT_PRIVATE PrrSender {
   // OnPacketLost should be called on the first loss that triggers a recovery
   // period and all other methods in this class should only be called when in
   // recovery.
-  void OnPacketLost(QuicByteCount bytes_in_flight);
+  void OnPacketLost(QuicByteCount prior_in_flight);
   void OnPacketSent(QuicByteCount sent_bytes);
   void OnPacketAcked(QuicByteCount acked_bytes);
   QuicTime::Delta TimeUntilSend(QuicByteCount congestion_window,

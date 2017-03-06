@@ -37,9 +37,11 @@ const char kResultHistogram[] = "UMA.CreatePersistentHistogram.Result";
 // so that, if the structure of that object changes, stored older versions
 // will be safely ignored.
 enum : uint32_t {
-  kTypeIdHistogram   = 0xF1645910 + 2,  // SHA1(Histogram)   v2
+  kTypeIdHistogram = 0xF1645910 + 3,    // SHA1(Histogram)   v3
   kTypeIdRangesArray = 0xBCEA225A + 1,  // SHA1(RangesArray) v1
   kTypeIdCountsArray = 0x53215530 + 1,  // SHA1(CountsArray) v1
+
+  kTypeIdHistogramUnderConstruction = ~kTypeIdHistogram,
 };
 
 // The current globally-active persistent allocator for all new histograms.
@@ -226,6 +228,10 @@ PersistentMemoryAllocator::Reference PersistentSampleMapRecords::CreateNew(
 // This data will be held in persistent memory in order for processes to
 // locate and use histograms created elsewhere.
 struct PersistentHistogramAllocator::PersistentHistogramData {
+  // Expected size for 32/64-bit check.
+  static constexpr size_t kExpectedInstanceSize =
+      40 + 2 * HistogramSamples::Metadata::kExpectedInstanceSize;
+
   int32_t histogram_type;
   int32_t flags;
   int32_t minimum;
@@ -240,7 +246,7 @@ struct PersistentHistogramAllocator::PersistentHistogramData {
   // Space for the histogram name will be added during the actual allocation
   // request. This must be the last field of the structure. A zero-size array
   // or a "flexible" array would be preferred but is not (yet) valid C++.
-  char name[1];
+  char name[sizeof(uint64_t)];  // Force 64-bit alignment on 32-bit builds.
 };
 
 PersistentHistogramAllocator::Iterator::Iterator(
@@ -276,8 +282,15 @@ std::unique_ptr<HistogramBase> PersistentHistogramAllocator::GetHistogram(
       memory_allocator_->GetAsObject<PersistentHistogramData>(
           ref, kTypeIdHistogram);
   size_t length = memory_allocator_->GetAllocSize(ref);
+
+  // Check that metadata is reasonable: name is NUL terminated and non-empty,
+  // ID fields have been loaded with a hash of the name (0 is considered
+  // unset/invalid).
   if (!histogram_data ||
-      reinterpret_cast<char*>(histogram_data)[length - 1] != '\0') {
+      reinterpret_cast<char*>(histogram_data)[length - 1] != '\0' ||
+      histogram_data->name[0] == '\0' ||
+      histogram_data->samples_metadata.id == 0 ||
+      histogram_data->logged_metadata.id == 0) {
     RecordCreateHistogramResult(CREATE_HISTOGRAM_INVALID_METADATA);
     NOTREACHED();
     return nullptr;
@@ -304,14 +317,17 @@ std::unique_ptr<HistogramBase> PersistentHistogramAllocator::AllocateHistogram(
 
   // Create the metadata necessary for a persistent sparse histogram. This
   // is done first because it is a small subset of what is required for
-  // other histograms.
+  // other histograms. The type is "under construction" so that a crash
+  // during the datafill doesn't leave a bad record around that could cause
+  // confusion by another process trying to read it. It will be corrected
+  // once histogram construction is complete.
   PersistentMemoryAllocator::Reference histogram_ref =
       memory_allocator_->Allocate(
           offsetof(PersistentHistogramData, name) + name.length() + 1,
-          kTypeIdHistogram);
+          kTypeIdHistogramUnderConstruction);
   PersistentHistogramData* histogram_data =
-      memory_allocator_->GetAsObject<PersistentHistogramData>(histogram_ref,
-                                                              kTypeIdHistogram);
+      memory_allocator_->GetAsObject<PersistentHistogramData>(
+          histogram_ref, kTypeIdHistogramUnderConstruction);
   if (histogram_data) {
     memcpy(histogram_data->name, name.c_str(), name.size() + 1);
     histogram_data->histogram_type = histogram_type;
@@ -328,14 +344,15 @@ std::unique_ptr<HistogramBase> PersistentHistogramAllocator::AllocateHistogram(
       return nullptr;
     }
 
-    size_t ranges_bytes = (bucket_count + 1) * sizeof(HistogramBase::Sample);
+    size_t ranges_count = bucket_count + 1;
+    size_t ranges_bytes = ranges_count * sizeof(HistogramBase::Sample);
     PersistentMemoryAllocator::Reference counts_ref =
         memory_allocator_->Allocate(counts_bytes, kTypeIdCountsArray);
     PersistentMemoryAllocator::Reference ranges_ref =
         memory_allocator_->Allocate(ranges_bytes, kTypeIdRangesArray);
     HistogramBase::Sample* ranges_data =
-        memory_allocator_->GetAsObject<HistogramBase::Sample>(
-            ranges_ref, kTypeIdRangesArray);
+        memory_allocator_->GetAsArray<HistogramBase::Sample>(
+            ranges_ref, kTypeIdRangesArray, ranges_count);
 
     // Only continue here if all allocations were successful. If they weren't,
     // there is no way to free the space but that's not really a problem since
@@ -367,6 +384,11 @@ std::unique_ptr<HistogramBase> PersistentHistogramAllocator::AllocateHistogram(
     // correct before commiting the new histogram to persistent space.
     std::unique_ptr<HistogramBase> histogram = CreateHistogram(histogram_data);
     DCHECK(histogram);
+    DCHECK_NE(0U, histogram_data->samples_metadata.id);
+    DCHECK_NE(0U, histogram_data->logged_metadata.id);
+    memory_allocator_->ChangeType(histogram_ref, kTypeIdHistogram,
+                                  kTypeIdHistogramUnderConstruction);
+
     if (ref_ptr != nullptr)
       *ref_ptr = histogram_ref;
 
@@ -480,14 +502,9 @@ PersistentHistogramAllocator::GetCreateHistogramResultHistogram() {
     if (!initialized) {
       initialized = true;
       if (g_allocator) {
-// Don't log in release-with-asserts builds, otherwise the test_installer step
-// fails because this code writes to a log file before the installer code had a
-// chance to set the log file's location.
-#if !defined(DCHECK_ALWAYS_ON)
-        DLOG(WARNING) << "Creating the results-histogram inside persistent"
-                      << " memory can cause future allocations to crash if"
-                      << " that memory is ever released (for testing).";
-#endif
+        DVLOG(1) << "Creating the results-histogram inside persistent"
+                 << " memory can cause future allocations to crash if"
+                 << " that memory is ever released (for testing).";
       }
 
       histogram_pointer = LinearHistogram::FactoryGet(
@@ -529,8 +546,9 @@ std::unique_ptr<HistogramBase> PersistentHistogramAllocator::CreateHistogram(
   PersistentHistogramData histogram_data = *histogram_data_ptr;
 
   HistogramBase::Sample* ranges_data =
-      memory_allocator_->GetAsObject<HistogramBase::Sample>(
-          histogram_data.ranges_ref, kTypeIdRangesArray);
+      memory_allocator_->GetAsArray<HistogramBase::Sample>(
+          histogram_data.ranges_ref, kTypeIdRangesArray,
+          PersistentMemoryAllocator::kSizeAny);
 
   const uint32_t max_buckets =
       std::numeric_limits<uint32_t>::max() / sizeof(HistogramBase::Sample);
@@ -559,8 +577,9 @@ std::unique_ptr<HistogramBase> PersistentHistogramAllocator::CreateHistogram(
           created_ranges.release());
 
   HistogramBase::AtomicCount* counts_data =
-      memory_allocator_->GetAsObject<HistogramBase::AtomicCount>(
-          histogram_data.counts_ref, kTypeIdCountsArray);
+      memory_allocator_->GetAsArray<HistogramBase::AtomicCount>(
+          histogram_data.counts_ref, kTypeIdCountsArray,
+          PersistentMemoryAllocator::kSizeAny);
   size_t counts_bytes =
       CalculateRequiredCountsBytes(histogram_data.bucket_count);
   if (!counts_data || counts_bytes == 0 ||
@@ -689,7 +708,7 @@ void GlobalHistogramAllocator::CreateWithLocalMemory(
 #if 0
 #if !defined(OS_NACL)
 // static
-void GlobalHistogramAllocator::CreateWithFile(
+bool GlobalHistogramAllocator::CreateWithFile(
     const FilePath& file_path,
     size_t size,
     uint64_t id,
@@ -709,14 +728,55 @@ void GlobalHistogramAllocator::CreateWithFile(
   if (!mmfile->IsValid() ||
       !FilePersistentMemoryAllocator::IsFileAcceptable(*mmfile, true)) {
     NOTREACHED();
-    return;
+    return false;
   }
 
   Set(WrapUnique(
       new GlobalHistogramAllocator(MakeUnique<FilePersistentMemoryAllocator>(
           std::move(mmfile), size, id, name, false))));
+  Get()->SetPersistentLocation(file_path);
+  return true;
 }
-#endif
+
+// static
+bool GlobalHistogramAllocator::CreateWithActiveFile(const FilePath& base_path,
+                                                    const FilePath& active_path,
+                                                    size_t size,
+                                                    uint64_t id,
+                                                    StringPiece name) {
+  if (!base::ReplaceFile(active_path, base_path, nullptr))
+    base::DeleteFile(base_path, /*recursive=*/false);
+
+  return base::GlobalHistogramAllocator::CreateWithFile(active_path, size, id,
+                                                        name);
+}
+
+// static
+bool GlobalHistogramAllocator::CreateWithActiveFileInDir(const FilePath& dir,
+                                                         size_t size,
+                                                         uint64_t id,
+                                                         StringPiece name) {
+  FilePath base_path, active_path;
+  ConstructFilePaths(dir, name, &base_path, &active_path);
+  return CreateWithActiveFile(base_path, active_path, size, id, name);
+}
+
+// static
+void GlobalHistogramAllocator::ConstructFilePaths(const FilePath& dir,
+                                                  StringPiece name,
+                                                  FilePath* out_base_path,
+                                                  FilePath* out_active_path) {
+  if (out_base_path) {
+    *out_base_path = dir.AppendASCII(name).AddExtension(
+        PersistentMemoryAllocator::kFileExtension);
+  }
+  if (out_active_path) {
+    *out_active_path =
+        dir.AppendASCII(name.as_string() + std::string("-active"))
+            .AddExtension(PersistentMemoryAllocator::kFileExtension);
+  }
+}
+#endif  // !defined(OS_NACL)
 
 // static
 void GlobalHistogramAllocator::CreateWithSharedMemory(
@@ -846,10 +906,30 @@ bool GlobalHistogramAllocator::WriteToPersistentLocation() {
 #endif
 }
 
+void GlobalHistogramAllocator::DeletePersistentLocation() {
+#if defined(OS_NACL)
+  NOTREACHED();
+#else
+  if (persistent_location_.empty())
+    return;
+
+  // Open (with delete) and then immediately close the file by going out of
+  // scope. This is the only cross-platform safe way to delete a file that may
+  // be open elsewhere. Open handles will continue to operate normally but
+  // new opens will not be possible.
+  File file(persistent_location_,
+            File::FLAG_OPEN | File::FLAG_READ | File::FLAG_DELETE_ON_CLOSE);
+#endif
+}
+
 GlobalHistogramAllocator::GlobalHistogramAllocator(
     std::unique_ptr<PersistentMemoryAllocator> memory)
     : PersistentHistogramAllocator(std::move(memory)),
-      import_iterator_(this) {}
+      import_iterator_(this) {
+  // Make sure the StatisticsRecorder is initialized to prevent duplicate
+  // histograms from being created. It's safe to call this multiple times.
+  StatisticsRecorder::Initialize();
+}
 
 void GlobalHistogramAllocator::ImportHistogramsToStatisticsRecorder() {
   // Skip the import if it's the histogram that was last created. Should a

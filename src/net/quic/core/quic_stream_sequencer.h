@@ -10,7 +10,8 @@
 #include <map>
 
 #include "base/macros.h"
-#include "net/quic/core/quic_protocol.h"
+#include "net/base/net_export.h"
+#include "net/quic/core/quic_packets.h"
 #include "net/quic/core/quic_stream_sequencer_buffer.h"
 
 namespace net {
@@ -20,14 +21,13 @@ class QuicStreamSequencerPeer;
 }  // namespace test
 
 class QuicClock;
-class QuicSession;
-class ReliableQuicStream;
+class QuicStream;
 
 // Buffers frames until we have something which can be passed
 // up to the next layer.
 class NET_EXPORT_PRIVATE QuicStreamSequencer {
  public:
-  QuicStreamSequencer(ReliableQuicStream* quic_stream, const QuicClock* clock);
+  QuicStreamSequencer(QuicStream* quic_stream, const QuicClock* clock);
   virtual ~QuicStreamSequencer();
 
   // If the frame is the next one we need in order to process in-order data,
@@ -82,6 +82,9 @@ class NET_EXPORT_PRIVATE QuicStreamSequencer {
   // Free the memory of underlying buffer.
   void ReleaseBuffer();
 
+  // Free the memory of underlying buffer when no bytes remain in it.
+  void ReleaseBufferIfEmpty();
+
   // Number of bytes in the buffer right now.
   size_t NumBytesBuffered() const;
 
@@ -114,7 +117,7 @@ class NET_EXPORT_PRIVATE QuicStreamSequencer {
   bool MaybeCloseStream();
 
   // The stream which owns this sequencer.
-  ReliableQuicStream* stream_;
+  QuicStream* stream_;
 
   // Stores received data in offset order.
   QuicStreamSequencerBuffer buffered_frames_;

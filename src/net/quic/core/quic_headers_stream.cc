@@ -4,6 +4,8 @@
 
 #include "net/quic/core/quic_headers_stream.h"
 
+#include <algorithm>
+#include <string>
 #include <utility>
 
 #include "base/macros.h"
@@ -13,12 +15,12 @@
 #include "net/quic/core/quic_bug_tracker.h"
 #include "net/quic/core/quic_flags.h"
 #include "net/quic/core/quic_header_list.h"
+#include "net/quic/core/quic_server_session_base.h"
 #include "net/quic/core/quic_spdy_session.h"
 #include "net/quic/core/quic_time.h"
 #include "net/spdy/spdy_protocol.h"
 
 using base::StringPiece;
-using net::HTTP2;
 using net::SpdyFrameType;
 using std::string;
 
@@ -102,37 +104,13 @@ QuicHeadersStream::HpackDebugVisitor::HpackDebugVisitor() {}
 
 QuicHeadersStream::HpackDebugVisitor::~HpackDebugVisitor() {}
 
-// A SpdyFramer visitor which passed SYN_STREAM and SYN_REPLY frames to
-// the QuicSpdyStream, and closes the connection if any unexpected frames
-// are received.
+// A SpdyFramerVisitor that passes HEADERS frames to the QuicSpdyStream, and
+// closes the connection if any unexpected frames are received.
 class QuicHeadersStream::SpdyFramerVisitor
     : public SpdyFramerVisitorInterface,
       public SpdyFramerDebugVisitorInterface {
  public:
   explicit SpdyFramerVisitor(QuicHeadersStream* stream) : stream_(stream) {}
-
-  // SpdyFramerVisitorInterface implementation
-  void OnSynStream(SpdyStreamId stream_id,
-                   SpdyStreamId associated_stream_id,
-                   SpdyPriority priority,
-                   bool fin,
-                   bool unidirectional) override {
-    CloseConnection("SPDY SYN_STREAM frame received.");
-  }
-
-  void OnSynReply(SpdyStreamId stream_id, bool fin) override {
-    CloseConnection("SPDY SYN_REPLY frame received.");
-  }
-
-  bool OnControlFrameHeaderData(SpdyStreamId stream_id,
-                                const char* header_data,
-                                size_t len) override {
-    if (!stream_->IsConnected()) {
-      return false;
-    }
-    stream_->OnControlFrameHeaderData(stream_id, header_data, len);
-    return true;
-  }
 
   void OnStreamFrameData(SpdyStreamId stream_id,
                          const char* data,
@@ -144,8 +122,8 @@ class QuicHeadersStream::SpdyFramerVisitor
   }
 
   void OnStreamEnd(SpdyStreamId stream_id) override {
-    // The framer invokes OnStreamEnd after processing a SYN_STREAM
-    // or SYN_REPLY frame that had the fin bit set.
+    // The framer invokes OnStreamEnd after processing a frame that had the fin
+    // bit set.
   }
 
   void OnStreamPadding(SpdyStreamId stream_id, size_t len) override {
@@ -196,8 +174,28 @@ class QuicHeadersStream::SpdyFramerVisitor
       case SETTINGS_HEADER_TABLE_SIZE:
         stream_->UpdateHeaderEncoderTableSize(value);
         break;
+      case SETTINGS_ENABLE_PUSH:
+        if (FLAGS_quic_enable_server_push_by_default &&
+            stream_->session()->perspective() == Perspective::IS_SERVER) {
+          // See rfc7540, Section 6.5.2.
+          if (value > 1) {
+            CloseConnection("Invalid value for SETTINGS_ENABLE_PUSH: " +
+                            base::IntToString(value));
+            return;
+          }
+          stream_->UpdateEnableServerPush(value > 0);
+          break;
+        } else {
+          CloseConnection("Unsupported field of HTTP/2 SETTINGS frame: " +
+                          base::IntToString(id));
+        }
+        break;
       // TODO(fayang): Need to support SETTINGS_MAX_HEADER_LIST_SIZE when
       // clients are actually sending it.
+      case SETTINGS_MAX_HEADER_LIST_SIZE:
+        if (FLAGS_quic_send_max_header_list_size) {
+          break;
+        }
       default:
         CloseConnection("Unsupported field of HTTP/2 SETTINGS frame: " +
                         base::IntToString(id));
@@ -297,6 +295,12 @@ class QuicHeadersStream::SpdyFramerVisitor
     }
   }
 
+  void set_max_uncompressed_header_bytes(
+      size_t set_max_uncompressed_header_bytes) {
+    header_list_.set_max_uncompressed_header_bytes(
+        set_max_uncompressed_header_bytes);
+  }
+
  private:
   void CloseConnection(const string& details) {
     if (stream_->IsConnected()) {
@@ -313,7 +317,7 @@ class QuicHeadersStream::SpdyFramerVisitor
 };
 
 QuicHeadersStream::QuicHeadersStream(QuicSpdySession* session)
-    : ReliableQuicStream(kHeadersStreamId, session),
+    : QuicStream(kHeadersStreamId, session),
       spdy_session_(session),
       stream_id_(kInvalidStreamId),
       promised_stream_id_(kInvalidStreamId),
@@ -323,7 +327,6 @@ QuicHeadersStream::QuicHeadersStream(QuicSpdySession* session)
       supports_push_promise_(session->perspective() == Perspective::IS_CLIENT),
       cur_max_timestamp_(QuicTime::Zero()),
       prev_max_timestamp_(QuicTime::Zero()),
-      spdy_framer_(HTTP2),
       spdy_framer_visitor_(new SpdyFramerVisitor(this)) {
   spdy_framer_.set_visitor(spdy_framer_visitor_.get());
   spdy_framer_.set_debug_visitor(spdy_framer_visitor_.get());
@@ -370,60 +373,79 @@ size_t QuicHeadersStream::WritePushPromise(QuicStreamId original_stream_id,
   return frame.size();
 }
 
+void QuicHeadersStream::WriteDataFrame(
+    QuicStreamId id,
+    StringPiece data,
+    bool fin,
+    QuicAckListenerInterface* ack_notifier_delegate) {
+  SpdyDataIR spdy_data(id, data);
+  spdy_data.set_fin(fin);
+  SpdySerializedFrame frame(spdy_framer_.SerializeFrame(spdy_data));
+  scoped_refptr<ForceHolAckListener> ack_listener;
+  if (ack_notifier_delegate != nullptr) {
+    ack_listener = new ForceHolAckListener(ack_notifier_delegate,
+                                           frame.size() - data.length());
+  }
+  // Use buffered writes so that coherence of framing is preserved
+  // between streams.
+  WriteOrBufferData(StringPiece(frame.data(), frame.size()), false,
+                    ack_listener.get());
+}
+
 QuicConsumedData QuicHeadersStream::WritevStreamData(
     QuicStreamId id,
     QuicIOVector iov,
     QuicStreamOffset offset,
     bool fin,
     QuicAckListenerInterface* ack_notifier_delegate) {
-  const size_t max_len = kSpdyInitialFrameSizeLimit -
-                         SpdyConstants::GetDataFrameMinimumSize(HTTP2);
+  const size_t max_len =
+      kSpdyInitialFrameSizeLimit - SpdyConstants::kDataFrameMinimumSize;
 
   QuicConsumedData result(0, false);
   size_t total_length = iov.total_length;
 
+  if (total_length == 0 && fin) {
+    WriteDataFrame(id, StringPiece(), true, ack_notifier_delegate);
+    result.fin_consumed = true;
+    return result;
+  }
+
   // Encapsulate the data into HTTP/2 DATA frames.  The outer loop
   // handles each element of the source iov, the inner loop handles
-  // the possibility of fragmenting eacho of those into multiple DATA
+  // the possibility of fragmenting each of those into multiple DATA
   // frames, as the DATA frames have a max size of 16KB.
   for (int i = 0; i < iov.iov_count; i++) {
-    size_t offset = 0;
+    size_t src_iov_offset = 0;
     const struct iovec* src_iov = &iov.iov[i];
     do {
-      size_t len =
-          std::min(std::min(src_iov->iov_len - offset, max_len), total_length);
-      char* data = static_cast<char*>(src_iov->iov_base) + offset;
-      SpdyDataIR spdy_data(id, StringPiece(data, len));
+      if (queued_data_bytes() > 0) {
+        // Limit the amount of buffering to the minimum needed to
+        // preserve framing.
+        return result;
+      }
+      size_t len = std::min(
+          std::min(src_iov->iov_len - src_iov_offset, max_len), total_length);
+      char* data = static_cast<char*>(src_iov->iov_base) + src_iov_offset;
+      src_iov_offset += len;
       offset += len;
-      // fin handling, set it only it only very last generated HTTP/2
-      // DATA frame.
+      // fin handling, only set it for the final HTTP/2 DATA frame.
       bool last_iov = i == iov.iov_count - 1;
-      bool last_fragment_within_iov = offset >= src_iov->iov_len;
+      bool last_fragment_within_iov = src_iov_offset >= src_iov->iov_len;
       bool frame_fin = (last_iov && last_fragment_within_iov) ? fin : false;
-      spdy_data.set_fin(frame_fin);
+      WriteDataFrame(id, StringPiece(data, len), frame_fin,
+                     ack_notifier_delegate);
+      result.bytes_consumed += len;
       if (frame_fin) {
         result.fin_consumed = true;
       }
-      SpdySerializedFrame frame(spdy_framer_.SerializeFrame(spdy_data));
-      DVLOG(1) << "Encapsulating in DATA frame for stream " << id << " len "
-               << len << " fin " << spdy_data.fin() << " remaining "
-               << src_iov->iov_len - offset;
-
-      scoped_refptr<ForceHolAckListener> ack_listener;
-      if (ack_notifier_delegate != nullptr) {
-        ack_listener =
-            new ForceHolAckListener(ack_notifier_delegate, frame.size() - len);
-      }
-
-      WriteOrBufferData(StringPiece(frame.data(), frame.size()), false,
-                        ack_listener.get());
-      result.bytes_consumed += len;
+      DCHECK_GE(total_length, len);
       total_length -= len;
       if (total_length <= 0) {
         return result;
       }
-    } while (offset < src_iov->iov_len);
+    } while (src_iov_offset < src_iov->iov_len);
   }
+
   return result;
 }
 
@@ -446,7 +468,14 @@ void QuicHeadersStream::OnDataAvailable() {
       return;
     }
     sequencer()->MarkConsumed(iov.iov_len);
+    MaybeReleaseSequencerBuffer();
   }
+}
+
+void QuicHeadersStream::set_max_uncompressed_header_bytes(
+    size_t set_max_uncompressed_header_bytes) {
+  spdy_framer_visitor_->set_max_uncompressed_header_bytes(
+      set_max_uncompressed_header_bytes);
 }
 
 void QuicHeadersStream::OnHeaders(SpdyStreamId stream_id,
@@ -480,55 +509,6 @@ void QuicHeadersStream::OnPushPromise(SpdyStreamId stream_id,
   DCHECK_EQ(kInvalidStreamId, promised_stream_id_);
   stream_id_ = stream_id;
   promised_stream_id_ = promised_stream_id;
-}
-
-void QuicHeadersStream::OnControlFrameHeaderData(SpdyStreamId stream_id,
-                                                 const char* header_data,
-                                                 size_t len) {
-  DCHECK_EQ(stream_id_, stream_id);
-  if (len == 0) {
-    DCHECK_NE(0u, stream_id_);
-    DCHECK_NE(0u, frame_len_);
-    if (prev_max_timestamp_ > cur_max_timestamp_) {
-      // prev_max_timestamp_ > cur_max_timestamp_ implies that
-      // headers from lower numbered streams actually came off the
-      // wire after headers for the current stream, hence there was
-      // HOL blocking.
-      QuicTime::Delta delta = prev_max_timestamp_ - cur_max_timestamp_;
-      DVLOG(1) << "stream " << stream_id
-               << ": Net.QuicSession.HeadersHOLBlockedTime "
-               << delta.ToMilliseconds();
-      spdy_session_->OnHeadersHeadOfLineBlocking(delta);
-    }
-    prev_max_timestamp_ = std::max(prev_max_timestamp_, cur_max_timestamp_);
-    cur_max_timestamp_ = QuicTime::Zero();
-    if (promised_stream_id_ == kInvalidStreamId) {
-      spdy_session_->OnStreamHeadersComplete(stream_id_, fin_, frame_len_);
-    } else {
-      spdy_session_->OnPromiseHeadersComplete(stream_id_, promised_stream_id_,
-                                              frame_len_);
-    }
-    if (uncompressed_frame_len_ != 0) {
-      int compression_pct = 100 - (100 * frame_len_) / uncompressed_frame_len_;
-      DVLOG(1) << "Net.QuicHpackDecompressionPercentage: " << compression_pct;
-      UMA_HISTOGRAM_PERCENTAGE("Net.QuicHpackDecompressionPercentage",
-                               compression_pct);
-    }
-    // Reset state for the next frame.
-    promised_stream_id_ = kInvalidStreamId;
-    stream_id_ = kInvalidStreamId;
-    fin_ = false;
-    frame_len_ = 0;
-    uncompressed_frame_len_ = 0;
-  } else {
-    uncompressed_frame_len_ += len;
-    if (promised_stream_id_ == kInvalidStreamId) {
-      spdy_session_->OnStreamHeaders(stream_id_, StringPiece(header_data, len));
-    } else {
-      spdy_session_->OnPromiseHeaders(stream_id_,
-                                      StringPiece(header_data, len));
-    }
-  }
 }
 
 void QuicHeadersStream::OnHeaderList(const QuicHeaderList& header_list) {
@@ -591,6 +571,26 @@ void QuicHeadersStream::SetHpackDecoderDebugVisitor(
 
 void QuicHeadersStream::UpdateHeaderEncoderTableSize(uint32_t value) {
   spdy_framer_.UpdateHeaderEncoderTableSize(value);
+}
+
+void QuicHeadersStream::UpdateEnableServerPush(bool value) {
+  spdy_session_->set_server_push_enabled(value);
+}
+
+void QuicHeadersStream::MaybeReleaseSequencerBuffer() {
+  if (FLAGS_quic_headers_stream_release_sequencer_buffer &&
+      spdy_session_->ShouldReleaseHeadersStreamSequencerBuffer()) {
+    sequencer()->ReleaseBufferIfEmpty();
+  }
+}
+
+size_t QuicHeadersStream::SendMaxHeaderListSize(size_t value) {
+  SpdySettingsIR settings_frame;
+  settings_frame.AddSetting(SETTINGS_MAX_HEADER_LIST_SIZE, false, false, value);
+
+  SpdySerializedFrame frame(spdy_framer_.SerializeFrame(settings_frame));
+  WriteOrBufferData(StringPiece(frame.data(), frame.size()), false, nullptr);
+  return frame.size();
 }
 
 bool QuicHeadersStream::OnDataFrameHeader(QuicStreamId stream_id,

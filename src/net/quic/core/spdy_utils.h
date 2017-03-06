@@ -14,7 +14,7 @@
 #include "base/macros.h"
 #include "net/base/net_export.h"
 #include "net/quic/core/quic_header_list.h"
-#include "net/quic/core/quic_protocol.h"
+#include "net/quic/core/quic_packets.h"
 #include "net/spdy/spdy_framer.h"
 
 namespace net {
@@ -33,6 +33,12 @@ class NET_EXPORT_PRIVATE SpdyUtils {
                            uint32_t data_len,
                            int64_t* content_length,
                            SpdyHeaderBlock* headers);
+
+  // Populate |content length| with the value of the content-length header.
+  // Returns true on success, false if parsing fails or content-length header is
+  // missing.
+  static bool ExtractContentLengthFromHeaders(int64_t* content_length,
+                                              SpdyHeaderBlock* headers);
 
   // Parses |data| as a std::string containing serialized HTTP/2 HEADERS frame,
   // populating |trailers| with the key->value std:pairs found.
@@ -66,6 +72,11 @@ class NET_EXPORT_PRIVATE SpdyUtils {
   // Returns true if result of |GetUrlFromHeaderBlock()| is non-empty
   // and is a well-formed URL.
   static bool UrlIsValid(const net::SpdyHeaderBlock& headers);
+
+  // Populates the fields of |headers| to make a GET request of |url|,
+  // which must be fully-qualified.
+  static bool PopulateHeaderBlockFromUrl(const std::string url,
+                                         SpdyHeaderBlock* headers);
 
  private:
   DISALLOW_COPY_AND_ASSIGN(SpdyUtils);

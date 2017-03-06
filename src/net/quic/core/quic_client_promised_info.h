@@ -8,18 +8,17 @@
 #include <sys/types.h>
 #include <string>
 
+#include "net/base/net_export.h"
 #include "net/quic/core/quic_alarm.h"
 #include "net/quic/core/quic_client_push_promise_index.h"
 #include "net/quic/core/quic_client_session_base.h"
-#include "net/quic/core/quic_protocol.h"
+#include "net/quic/core/quic_packets.h"
 #include "net/quic/core/quic_spdy_stream.h"
 #include "net/spdy/spdy_framer.h"
 
 namespace net {
 
 class QuicClientSessionBase;
-class QuicDataToResend;
-class QuicConnectionHelperInterface;
 
 namespace test {
 class QuicClientPromisedInfoPeer;
@@ -76,6 +75,9 @@ class NET_EXPORT_PRIVATE QuicClientPromisedInfo
   QuicStreamId id() const { return id_; }
 
   const std::string url() const { return url_; }
+
+  // Return true if there's a request pending matching this push promise.
+  bool is_validating() const { return client_request_delegate_ != nullptr; }
 
  private:
   friend class test::QuicClientPromisedInfoPeer;

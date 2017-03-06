@@ -10,7 +10,7 @@
 #include "net/quic/core/quic_connection.h"
 #include "net/quic/core/quic_flags.h"
 #include "net/quic/core/quic_spdy_session.h"
-#include "net/quic/core/reliable_quic_stream.h"
+#include "net/quic/core/quic_stream.h"
 
 using std::string;
 
@@ -23,16 +23,14 @@ QuicServerSessionBase::QuicServerSessionBase(
     QuicCryptoServerStream::Helper* helper,
     const QuicCryptoServerConfig* crypto_config,
     QuicCompressedCertsCache* compressed_certs_cache)
-    : QuicSpdySession(connection, config),
+    : QuicSpdySession(connection, visitor, config),
       crypto_config_(crypto_config),
       compressed_certs_cache_(compressed_certs_cache),
-      visitor_(visitor),
       helper_(helper),
       bandwidth_resumption_enabled_(false),
       bandwidth_estimate_sent_to_client_(QuicBandwidth::Zero()),
       last_scup_time_(QuicTime::Zero()),
-      last_scup_packet_number_(0),
-      server_push_enabled_(false) {}
+      last_scup_packet_number_(0) {}
 
 QuicServerSessionBase::~QuicServerSessionBase() {}
 
@@ -56,8 +54,12 @@ void QuicServerSessionBase::OnConfigNegotiated() {
       ContainsQuicTag(config()->ReceivedConnectionOptions(), kBWMX);
   bandwidth_resumption_enabled_ =
       last_bandwidth_resumption || max_bandwidth_resumption;
-  server_push_enabled_ =
-      ContainsQuicTag(config()->ReceivedConnectionOptions(), kSPSH);
+
+  if (!FLAGS_quic_enable_server_push_by_default ||
+      connection()->version() < QUIC_VERSION_35) {
+    set_server_push_enabled(
+        ContainsQuicTag(config()->ReceivedConnectionOptions(), kSPSH));
+  }
 
   // If the client has provided a bandwidth estimate from the same serving
   // region as this server, then decide whether to use the data for bandwidth
@@ -72,7 +74,7 @@ void QuicServerSessionBase::OnConfigNegotiated() {
 
     if (bandwidth_resumption_enabled_) {
       // Only do bandwidth resumption if estimate is recent enough.
-      const int64_t seconds_since_estimate =
+      const uint64_t seconds_since_estimate =
           connection()->clock()->WallNow().ToUNIXSeconds() -
           cached_network_params->timestamp();
       if (seconds_since_estimate <= kNumSecondsPerHour) {
@@ -92,13 +94,6 @@ void QuicServerSessionBase::OnConnectionClosed(QuicErrorCode error,
   if (crypto_stream_.get() != nullptr) {
     crypto_stream_->CancelOutstandingCallbacks();
   }
-  visitor_->OnConnectionClosed(connection()->connection_id(), error,
-                               error_details);
-}
-
-void QuicServerSessionBase::OnWriteBlocked() {
-  QuicSession::OnWriteBlocked();
-  visitor_->OnWriteBlocked(connection());
 }
 
 void QuicServerSessionBase::OnCongestionWindowChange(QuicTime now) {

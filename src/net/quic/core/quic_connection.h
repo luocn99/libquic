@@ -30,8 +30,7 @@
 #include "base/logging.h"
 #include "base/macros.h"
 #include "base/strings/string_piece.h"
-#include "net/base/ip_address.h"
-#include "net/base/ip_endpoint.h"
+#include "net/base/net_export.h"
 #include "net/quic/core/crypto/quic_decrypter.h"
 #include "net/quic/core/quic_alarm.h"
 #include "net/quic/core/quic_alarm_factory.h"
@@ -43,12 +42,12 @@
 #include "net/quic/core/quic_packet_creator.h"
 #include "net/quic/core/quic_packet_generator.h"
 #include "net/quic/core/quic_packet_writer.h"
-#include "net/quic/core/quic_protocol.h"
+#include "net/quic/core/quic_packets.h"
 #include "net/quic/core/quic_received_packet_manager.h"
-#include "net/quic/core/quic_sent_entropy_manager.h"
 #include "net/quic/core/quic_sent_packet_manager_interface.h"
 #include "net/quic/core/quic_time.h"
 #include "net/quic/core/quic_types.h"
+#include "net/quic/platform/api/quic_socket_address.h"
 
 namespace net {
 
@@ -179,8 +178,8 @@ class NET_EXPORT_PRIVATE QuicConnectionDebugVisitor
 
   // Called when a packet has been received, but before it is
   // validated or parsed.
-  virtual void OnPacketReceived(const IPEndPoint& self_address,
-                                const IPEndPoint& peer_address,
+  virtual void OnPacketReceived(const QuicSocketAddress& self_address,
+                                const QuicSocketAddress& peer_address,
                                 const QuicEncryptedPacket& packet) {}
 
   // Called when the unauthenticated portion of the header has been parsed.
@@ -309,7 +308,7 @@ class NET_EXPORT_PRIVATE QuicConnection
   // |writer| to write packets. |owns_writer| specifies whether the connection
   // takes ownership of |writer|. |helper| must outlive this connection.
   QuicConnection(QuicConnectionId connection_id,
-                 IPEndPoint address,
+                 QuicSocketAddress address,
                  QuicConnectionHelperInterface* helper,
                  QuicAlarmFactory* alarm_factory,
                  QuicPacketWriter* writer,
@@ -388,8 +387,8 @@ class NET_EXPORT_PRIVATE QuicConnection
   // the peer.
   // In a client, the packet may be "stray" and have a different connection ID
   // than that of this connection.
-  virtual void ProcessUdpPacket(const IPEndPoint& self_address,
-                                const IPEndPoint& peer_address,
+  virtual void ProcessUdpPacket(const QuicSocketAddress& self_address,
+                                const QuicSocketAddress& peer_address,
                                 const QuicReceivedPacket& packet);
 
   // QuicBlockedWriterInterface
@@ -419,7 +418,7 @@ class NET_EXPORT_PRIVATE QuicConnection
   }
 
   // Set self address.
-  void SetSelfAddress(IPEndPoint address) { self_address_ = address; }
+  void SetSelfAddress(QuicSocketAddress address) { self_address_ = address; }
 
   // The version of the protocol this connection is using.
   QuicVersion version() const { return framer_.version(); }
@@ -494,8 +493,8 @@ class NET_EXPORT_PRIVATE QuicConnection
   void set_creator_debug_delegate(QuicPacketCreator::DebugDelegate* visitor) {
     packet_generator_.set_debug_delegate(visitor);
   }
-  const IPEndPoint& self_address() const { return self_address_; }
-  const IPEndPoint& peer_address() const { return peer_address_; }
+  const QuicSocketAddress& self_address() const { return self_address_; }
+  const QuicSocketAddress& peer_address() const { return peer_address_; }
   QuicConnectionId connection_id() const { return connection_id_; }
   const QuicClock* clock() const { return clock_; }
   QuicRandom* random_generator() const { return random_generator_; }
@@ -686,14 +685,14 @@ class NET_EXPORT_PRIVATE QuicConnection
     return packet_generator_;
   }
 
-  EncryptionLevel encryption_level() const { return encryption_level_; }
-
-  const IPEndPoint& last_packet_source_address() const {
-    return last_packet_source_address_;
+  const QuicReceivedPacketManager& received_packet_manager() const {
+    return received_packet_manager_;
   }
 
-  void set_largest_packet_size_supported(QuicByteCount size) {
-    largest_packet_size_supported_ = size;
+  EncryptionLevel encryption_level() const { return encryption_level_; }
+
+  const QuicSocketAddress& last_packet_source_address() const {
+    return last_packet_source_address_;
   }
 
  protected:
@@ -783,10 +782,6 @@ class NET_EXPORT_PRIVATE QuicConnection
   // Deletes and clears any queued packets.
   void ClearQueuedPackets();
 
-  // Closes the connection if the sent or received packet manager are tracking
-  // too many outstanding packets.
-  void MaybeCloseIfTooManyOutstandingPackets();
-
   // Writes as many queued packets as possible.  The connection must not be
   // blocked when this is called.
   void WriteQueuedPackets();
@@ -831,11 +826,6 @@ class NET_EXPORT_PRIVATE QuicConnection
 
   // Sets the MTU discovery alarm if necessary.
   void MaybeSetMtuAlarm();
-
-  // On arrival of a new packet, checks to see if the socket addresses have
-  // changed since the last packet we saw on this connection.
-  void CheckForAddressMigration(const IPEndPoint& self_address,
-                                const IPEndPoint& peer_address);
 
   HasRetransmittableData IsRetransmittable(const SerializedPacket& packet);
   bool IsTerminationPacket(const SerializedPacket& packet);
@@ -886,8 +876,8 @@ class NET_EXPORT_PRIVATE QuicConnection
   const QuicConnectionId connection_id_;
   // Address on the last successfully processed packet received from the
   // client.
-  IPEndPoint self_address_;
-  IPEndPoint peer_address_;
+  QuicSocketAddress self_address_;
+  QuicSocketAddress peer_address_;
 
   // Records change type when the peer initiates migration to a new peer
   // address. Reset to NO_CHANGE after peer migration is validated.
@@ -905,8 +895,12 @@ class NET_EXPORT_PRIVATE QuicConnection
                                      // parsed or nullptr.
   EncryptionLevel last_decrypted_packet_level_;
   QuicPacketHeader last_header_;
+  // TODO(ianswett): Remove last_stop_waiting_frame_ once
+  // FLAGS_quic_receive_packet_once_decrypted is deprecated.
   QuicStopWaitingFrame last_stop_waiting_frame_;
   bool should_last_packet_instigate_acks_;
+  // Whether the most recent packet was missing before it was received.
+  bool was_last_packet_missing_;
 
   // Track some peer state so we can do less bookkeeping
   // Largest sequence sent by the peer which had an ack frame (latest ack info).
@@ -919,7 +913,7 @@ class NET_EXPORT_PRIVATE QuicConnection
   // established, but which could not be decrypted.  We buffer these on
   // the assumption that they could not be processed because they were
   // sent with the INITIAL encryption and the CHLO message was lost.
-  std::deque<QuicEncryptedPacket*> undecryptable_packets_;
+  std::deque<std::unique_ptr<QuicEncryptedPacket>> undecryptable_packets_;
 
   // Maximum number of undecryptable packets the connection will store.
   size_t max_undecryptable_packets_;
@@ -953,7 +947,6 @@ class NET_EXPORT_PRIVATE QuicConnection
   bool close_connection_after_five_rtos_;
 
   QuicReceivedPacketManager received_packet_manager_;
-  QuicSentEntropyManager sent_entropy_manager_;
 
   // Indicates whether an ack should be sent the next time we try to write.
   bool ack_queued_;
@@ -1042,6 +1035,19 @@ class NET_EXPORT_PRIVATE QuicConnection
   std::unique_ptr<QuicSentPacketManagerInterface> sent_packet_manager_;
 
   // The state of connection in version negotiation finite state machine.
+  enum QuicVersionNegotiationState {
+    START_NEGOTIATION = 0,
+    // Server-side this implies we've sent a version negotiation packet and are
+    // waiting on the client to select a compatible version.  Client-side this
+    // implies we've gotten a version negotiation packet, are retransmitting the
+    // initial packets with a supported version and are waiting for our first
+    // packet from the server.
+    NEGOTIATION_IN_PROGRESS,
+    // This indicates this endpoint has received a packet from the peer with a
+    // version this endpoint supports.  Version negotiation is complete, and the
+    // version number will no longer be sent with future packets.
+    NEGOTIATED_VERSION
+  };
   QuicVersionNegotiationState version_negotiation_state_;
 
   // Tracks if the connection was created by the server or the client.
@@ -1052,10 +1058,10 @@ class NET_EXPORT_PRIVATE QuicConnection
   bool connected_;
 
   // Destination address of the last received packet.
-  IPEndPoint last_packet_destination_address_;
+  QuicSocketAddress last_packet_destination_address_;
 
   // Source address of the last received packet.
-  IPEndPoint last_packet_source_address_;
+  QuicSocketAddress last_packet_source_address_;
 
   // Set to false if the connection should not send truncated connection IDs to
   // the peer, even if the peer supports it.
@@ -1087,9 +1093,6 @@ class NET_EXPORT_PRIVATE QuicConnection
 
   // The size of the largest packet received from peer.
   QuicByteCount largest_received_packet_size_;
-
-  // The maximum allowed packet size.
-  QuicByteCount largest_packet_size_supported_;
 
   // Whether a GoAway has been sent.
   bool goaway_sent_;

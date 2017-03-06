@@ -46,7 +46,9 @@
 #include <list>
 
 #include "base/macros.h"
+#include "net/base/net_export.h"
 #include "net/quic/core/quic_packet_creator.h"
+#include "net/quic/core/quic_pending_retransmission.h"
 #include "net/quic/core/quic_sent_packet_manager.h"
 #include "net/quic/core/quic_types.h"
 
@@ -72,7 +74,6 @@ class NET_EXPORT_PRIVATE QuicPacketGenerator {
 
   QuicPacketGenerator(QuicConnectionId connection_id,
                       QuicFramer* framer,
-                      QuicRandom* random_generator,
                       QuicBufferAllocator* buffer_allocator,
                       DelegateInterface* delegate);
 
@@ -135,15 +136,12 @@ class NET_EXPORT_PRIVATE QuicPacketGenerator {
   void SetDiversificationNonce(const DiversificationNonce& nonce);
 
   // Creates a version negotiation packet which supports |supported_versions|.
-  // Caller owns the created  packet. Also, sets the entropy hash of the
-  // serialized packet to a random bool and returns that value as a member of
-  // SerializedPacket.
-  QuicEncryptedPacket* SerializeVersionNegotiationPacket(
+  std::unique_ptr<QuicEncryptedPacket> SerializeVersionNegotiationPacket(
       const QuicVersionVector& supported_versions);
 
   // Re-serializes frames with the original packet's packet number length.
   // Used for retransmitting packets to ensure they aren't too long.
-  void ReserializeAllFrames(const PendingRetransmission& retransmission,
+  void ReserializeAllFrames(const QuicPendingRetransmission& retransmission,
                             char* buffer,
                             size_t buffer_len);
 
@@ -181,8 +179,6 @@ class NET_EXPORT_PRIVATE QuicPacketGenerator {
     packet_creator_.set_debug_delegate(debug_delegate);
   }
 
-  const QuicAckFrame& pending_ack_frame() const { return pending_ack_frame_; }
-
  private:
   friend class test::QuicPacketGeneratorPeer;
 
@@ -214,7 +210,6 @@ class NET_EXPORT_PRIVATE QuicPacketGenerator {
   // a reference to it until we flush (and serialize it). Retransmittable frames
   // are referenced elsewhere so that they can later be (optionally)
   // retransmitted.
-  QuicAckFrame pending_ack_frame_;
   QuicStopWaitingFrame pending_stop_waiting_frame_;
 
   DISALLOW_COPY_AND_ASSIGN(QuicPacketGenerator);

@@ -517,7 +517,7 @@ class PreProcessor(object):
             if include_file in self.excludes:
                 print("Ignore", include_file, "by excluding rule")
                 return
-            #print "include_file =", include_file
+            print("include_file =", include_file)
             self.result.append(include_file)
             contents = self.read_file(include_file)
             new_tuples = [('scons_current_file', include_file)] + \

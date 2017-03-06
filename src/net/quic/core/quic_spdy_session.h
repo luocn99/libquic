@@ -10,6 +10,7 @@
 #include <memory>
 
 #include "base/macros.h"
+#include "net/base/net_export.h"
 #include "net/quic/core/quic_header_list.h"
 #include "net/quic/core/quic_headers_stream.h"
 #include "net/quic/core/quic_session.h"
@@ -24,27 +25,20 @@ class QuicSpdySessionPeer;
 // A QUIC session with a headers stream.
 class NET_EXPORT_PRIVATE QuicSpdySession : public QuicSession {
  public:
-  // Does not take ownership of |connection|.
-  QuicSpdySession(QuicConnection* connection, const QuicConfig& config);
+  // Does not take ownership of |connection| or |visitor|.
+  QuicSpdySession(QuicConnection* connection,
+                  QuicSession::Visitor* visitor,
+                  const QuicConfig& config);
 
   ~QuicSpdySession() override;
 
   void Initialize() override;
 
-  // Called by |headers_stream_| when headers have been received for a stream.
-  virtual void OnStreamHeaders(QuicStreamId stream_id,
-                               base::StringPiece headers_data);
   // Called by |headers_stream_| when headers with a priority have been
   // received for this stream.  This method will only be called for server
   // streams.
   virtual void OnStreamHeadersPriority(QuicStreamId stream_id,
                                        SpdyPriority priority);
-  // Called by |headers_stream_| when headers have been completely received
-  // for a stream.  |fin| will be true if the fin flag was set in the headers
-  // frame.
-  virtual void OnStreamHeadersComplete(QuicStreamId stream_id,
-                                       bool fin,
-                                       size_t frame_len);
 
   // Called by |headers_stream_| when headers have been completely received
   // for a stream.  |fin| will be true if the fin flag was set in the headers
@@ -53,18 +47,6 @@ class NET_EXPORT_PRIVATE QuicSpdySession : public QuicSession {
                                   bool fin,
                                   size_t frame_len,
                                   const QuicHeaderList& header_list);
-
-  // Called by |headers_stream_| when push promise headers have been
-  // received for a stream.
-  virtual void OnPromiseHeaders(QuicStreamId stream_id,
-                                base::StringPiece headers_data);
-
-  // Called by |headers_stream_| when push promise headers have been
-  // completely received.  |fin| will be true if the fin flag was set
-  // in the headers.
-  virtual void OnPromiseHeadersComplete(QuicStreamId stream_id,
-                                        QuicStreamId promised_stream_id,
-                                        size_t frame_len);
 
   // Called by |headers_stream_| when push promise headers have been
   // completely received.  |fin| will be true if the fin flag was set
@@ -109,6 +91,16 @@ class NET_EXPORT_PRIVATE QuicSpdySession : public QuicSession {
 
   bool force_hol_blocking() const { return force_hol_blocking_; }
 
+  bool server_push_enabled() const { return server_push_enabled_; }
+
+  // Called by |QuicHeadersStream::UpdateEnableServerPush()| with
+  // value from SETTINGS_ENABLE_PUSH.
+  void set_server_push_enabled(bool enable) { server_push_enabled_ = enable; }
+
+  // Return true if this session wants to release headers stream's buffer
+  // aggressively.
+  virtual bool ShouldReleaseHeadersStreamSequencerBuffer();
+
  protected:
   // Override CreateIncomingDynamicStream() and CreateOutgoingDynamicStream()
   // with QuicSpdyStream return type to make sure that all data streams are
@@ -125,6 +117,8 @@ class NET_EXPORT_PRIVATE QuicSpdySession : public QuicSession {
   // If an outgoing stream can be created, return true.
   virtual bool ShouldCreateOutgoingDynamicStream() = 0;
 
+  void OnCryptoHandshakeEvent(CryptoHandshakeEvent event) override;
+
  private:
   friend class test::QuicSpdySessionPeer;
 
@@ -134,6 +128,10 @@ class NET_EXPORT_PRIVATE QuicSpdySession : public QuicSession {
   // simulate forced HOL blocking between streams as happens in
   // HTTP/2 over TCP.
   bool force_hol_blocking_;
+
+  // Set during handshake. If true, resources in x-associated-content and link
+  // headers will be pushed.
+  bool server_push_enabled_;
 
   DISALLOW_COPY_AND_ASSIGN(QuicSpdySession);
 };

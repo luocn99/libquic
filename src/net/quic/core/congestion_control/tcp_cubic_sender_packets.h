@@ -18,7 +18,7 @@
 #include "net/quic/core/congestion_control/tcp_cubic_sender_base.h"
 #include "net/quic/core/quic_bandwidth.h"
 #include "net/quic/core/quic_connection_stats.h"
-#include "net/quic/core/quic_protocol.h"
+#include "net/quic/core/quic_packets.h"
 #include "net/quic/core/quic_time.h"
 
 namespace net {
@@ -41,6 +41,8 @@ class NET_EXPORT_PRIVATE TcpCubicSenderPackets : public TcpCubicSenderBase {
   ~TcpCubicSenderPackets() override;
 
   // Start implementation of SendAlgorithmInterface.
+  void SetFromConfig(const QuicConfig& config,
+                     Perspective perspective) override;
   void SetNumEmulatedConnections(int num_connections) override;
   void OnConnectionMigration() override;
   QuicByteCount GetCongestionWindow() const override;
@@ -60,10 +62,10 @@ class NET_EXPORT_PRIVATE TcpCubicSenderPackets : public TcpCubicSenderBase {
   void ExitSlowstart() override;
   void OnPacketLost(QuicPacketNumber largest_loss,
                     QuicByteCount lost_bytes,
-                    QuicByteCount bytes_in_flight) override;
+                    QuicByteCount prior_in_flight) override;
   void MaybeIncreaseCwnd(QuicPacketNumber acked_packet_number,
                          QuicByteCount acked_bytes,
-                         QuicByteCount bytes_in_flight) override;
+                         QuicByteCount prior_in_flight) override;
   void HandleRetransmissionTimeout() override;
 
  private:

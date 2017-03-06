@@ -14,8 +14,6 @@
 #include "net/quic/core/quic_bug_tracker.h"
 #include "net/quic/core/quic_flags.h"
 
-using std::max;
-using std::min;
 
 namespace net {
 
@@ -46,21 +44,25 @@ TcpCubicSenderPackets::TcpCubicSenderPackets(
 
 TcpCubicSenderPackets::~TcpCubicSenderPackets() {}
 
+void TcpCubicSenderPackets::SetFromConfig(const QuicConfig& config,
+                                          Perspective perspective) {
+  TcpCubicSenderBase::SetFromConfig(config, perspective);
+  if (FLAGS_quic_fix_cubic_convex_mode &&
+      config.HasReceivedConnectionOptions() &&
+      ContainsQuicTag(config.ReceivedConnectionOptions(), kCCVX)) {
+    cubic_.SetFixConvexMode(true);
+  }
+}
+
 void TcpCubicSenderPackets::SetCongestionWindowFromBandwidthAndRtt(
     QuicBandwidth bandwidth,
     QuicTime::Delta rtt) {
   QuicPacketCount new_congestion_window =
       bandwidth.ToBytesPerPeriod(rtt) / kDefaultTCPMSS;
-  if (FLAGS_quic_no_lower_bw_resumption_limit) {
-    // Limit new CWND to be in the range [1, kMaxCongestionWindow].
-    congestion_window_ =
-        max(min_congestion_window_,
-            min(new_congestion_window, kMaxResumptionCongestionWindow));
-  } else {
-    congestion_window_ =
-        max(min(new_congestion_window, kMaxResumptionCongestionWindow),
-            kMinCongestionWindowForBandwidthResumption);
-  }
+  // Limit new CWND to be in the range [1, kMaxCongestionWindow].
+  congestion_window_ =
+      std::max(min_congestion_window_,
+               std::min(new_congestion_window, kMaxResumptionCongestionWindow));
 }
 
 void TcpCubicSenderPackets::SetCongestionWindowInPackets(
@@ -84,7 +86,7 @@ void TcpCubicSenderPackets::ExitSlowstart() {
 
 void TcpCubicSenderPackets::OnPacketLost(QuicPacketNumber packet_number,
                                          QuicByteCount lost_bytes,
-                                         QuicByteCount bytes_in_flight) {
+                                         QuicByteCount prior_in_flight) {
   // TCP NewReno (RFC6582) says that once a loss occurs, any losses in packets
   // already sent should be treated as a single loss event, since it's expected.
   if (packet_number <= largest_sent_at_last_cutback_) {
@@ -97,7 +99,7 @@ void TcpCubicSenderPackets::OnPacketLost(QuicPacketNumber packet_number,
                 (stats_->slowstart_bytes_lost - lost_bytes) / kDefaultTCPMSS) {
           // Reduce congestion window by 1 for every mss of bytes lost.
           congestion_window_ =
-              max(congestion_window_ - 1, min_slow_start_exit_window_);
+              std::max(congestion_window_ - 1, min_slow_start_exit_window_);
         }
         slowstart_threshold_ = congestion_window_;
       }
@@ -113,7 +115,7 @@ void TcpCubicSenderPackets::OnPacketLost(QuicPacketNumber packet_number,
   }
 
   if (!no_prr_) {
-    prr_.OnPacketLost(bytes_in_flight);
+    prr_.OnPacketLost(prior_in_flight);
   }
 
   // TODO(jri): Separate out all of slow start into a separate class.
@@ -155,11 +157,11 @@ QuicByteCount TcpCubicSenderPackets::GetSlowStartThreshold() const {
 void TcpCubicSenderPackets::MaybeIncreaseCwnd(
     QuicPacketNumber acked_packet_number,
     QuicByteCount /*acked_bytes*/,
-    QuicByteCount bytes_in_flight) {
+    QuicByteCount prior_in_flight) {
   QUIC_BUG_IF(InRecovery()) << "Never increase the CWND during recovery.";
   // Do not increase the congestion window unless the sender is close to using
   // the current window.
-  if (!IsCwndLimited(bytes_in_flight)) {
+  if (!IsCwndLimited(prior_in_flight)) {
     cubic_.OnApplicationLimited();
     return;
   }
@@ -188,9 +190,10 @@ void TcpCubicSenderPackets::MaybeIncreaseCwnd(
              << " slowstart threshold: " << slowstart_threshold_
              << " congestion window count: " << congestion_window_count_;
   } else {
-    congestion_window_ = min(max_tcp_congestion_window_,
-                             cubic_.CongestionWindowAfterAck(
-                                 congestion_window_, rtt_stats_->min_rtt()));
+    congestion_window_ =
+        std::min(max_tcp_congestion_window_,
+                 cubic_.CongestionWindowAfterAck(congestion_window_,
+                                                 rtt_stats_->min_rtt()));
     DVLOG(1) << "Cubic; congestion window: " << congestion_window_
              << " slowstart threshold: " << slowstart_threshold_;
   }

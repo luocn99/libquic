@@ -5,13 +5,14 @@
 #ifndef NET_QUIC_QUIC_BUFFERED_PACKET_STORE_H_
 #define NET_QUIC_QUIC_BUFFERED_PACKET_STORE_H_
 
-#include "net/base/ip_address.h"
 #include "net/base/linked_hash_map.h"
+#include "net/base/net_export.h"
 #include "net/quic/core/quic_alarm.h"
 #include "net/quic/core/quic_alarm_factory.h"
-#include "net/quic/core/quic_clock.h"
-#include "net/quic/core/quic_protocol.h"
+#include "net/quic/core/quic_packets.h"
 #include "net/quic/core/quic_time.h"
+#include "net/quic/platform/api/quic_clock.h"
+#include "net/quic/platform/api/quic_socket_address.h"
 
 namespace net {
 
@@ -39,8 +40,8 @@ class NET_EXPORT_PRIVATE QuicBufferedPacketStore {
   // A packets with client/server address.
   struct NET_EXPORT_PRIVATE BufferedPacket {
     BufferedPacket(std::unique_ptr<QuicReceivedPacket> packet,
-                   IPEndPoint server_address,
-                   IPEndPoint client_address);
+                   QuicSocketAddress server_address,
+                   QuicSocketAddress client_address);
     BufferedPacket(BufferedPacket&& other);
 
     BufferedPacket& operator=(BufferedPacket&& other);
@@ -48,8 +49,8 @@ class NET_EXPORT_PRIVATE QuicBufferedPacketStore {
     ~BufferedPacket();
 
     std::unique_ptr<QuicReceivedPacket> packet;
-    IPEndPoint server_address;
-    IPEndPoint client_address;
+    QuicSocketAddress server_address;
+    QuicSocketAddress client_address;
   };
 
   // A queue of BufferedPackets for a connection.
@@ -90,8 +91,8 @@ class NET_EXPORT_PRIVATE QuicBufferedPacketStore {
   // Adds a copy of packet into packet queue for given connection.
   EnqueuePacketResult EnqueuePacket(QuicConnectionId connection_id,
                                     const QuicReceivedPacket& packet,
-                                    IPEndPoint server_address,
-                                    IPEndPoint client_address,
+                                    QuicSocketAddress server_address,
+                                    QuicSocketAddress client_address,
                                     bool is_chlo);
 
   // Returns true if there are any packets buffered for |connection_id|.
@@ -101,6 +102,9 @@ class NET_EXPORT_PRIVATE QuicBufferedPacketStore {
   // from the store. Returns an empty list if no early arrived packets for this
   // connection are present.
   std::list<BufferedPacket> DeliverPackets(QuicConnectionId connection_id);
+
+  // Discards packets buffered for |connection_id|, if any.
+  void DiscardPackets(QuicConnectionId connection_id);
 
   // Examines how long packets have been buffered in the store for each
   // connection. If they stay too long, removes them for new coming packets and
@@ -137,7 +141,7 @@ class NET_EXPORT_PRIVATE QuicBufferedPacketStore {
   BufferedPacketMap undecryptable_packets_;
 
   // The max time the packets of a connection can be buffer in the store.
-  QuicTime::Delta connection_life_span_;
+  const QuicTime::Delta connection_life_span_;
 
   VisitorInterface* visitor_;  // Unowned.
 

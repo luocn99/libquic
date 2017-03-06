@@ -17,6 +17,7 @@
 #include "base/logging.h"
 #include "base/memory/shared_memory.h"
 #include "base/metrics/histogram_macros.h"
+#include "base/metrics/sparse_histogram.h"
 
 namespace {
 
@@ -132,7 +133,19 @@ PersistentMemoryAllocator::Iterator::Iterator(
 PersistentMemoryAllocator::Iterator::Iterator(
     const PersistentMemoryAllocator* allocator,
     Reference starting_after)
-    : allocator_(allocator), last_record_(starting_after), record_count_(0) {
+    : allocator_(allocator), last_record_(0), record_count_(0) {
+  Reset(starting_after);
+}
+
+void PersistentMemoryAllocator::Iterator::Reset() {
+  last_record_.store(kReferenceQueue, std::memory_order_relaxed);
+  record_count_.store(0, std::memory_order_relaxed);
+}
+
+void PersistentMemoryAllocator::Iterator::Reset(Reference starting_after) {
+  last_record_.store(starting_after, std::memory_order_relaxed);
+  record_count_.store(0, std::memory_order_relaxed);
+
   // Ensure that the starting point is a valid, iterable block (meaning it can
   // be read and has a non-zero "next" pointer).
   const volatile BlockHeader* block =
@@ -141,6 +154,14 @@ PersistentMemoryAllocator::Iterator::Iterator(
     NOTREACHED();
     last_record_.store(kReferenceQueue, std::memory_order_release);
   }
+}
+
+PersistentMemoryAllocator::Reference
+PersistentMemoryAllocator::Iterator::GetLast() {
+  Reference last = last_record_.load(std::memory_order_relaxed);
+  if (last == kReferenceQueue)
+    return kReferenceNull;
+  return last;
 }
 
 PersistentMemoryAllocator::Reference
@@ -247,20 +268,41 @@ bool PersistentMemoryAllocator::IsMemoryAcceptable(const void* base,
           (page_size == 0 || size % page_size == 0 || readonly));
 }
 
-PersistentMemoryAllocator::PersistentMemoryAllocator(
-    void* base,
-    size_t size,
-    size_t page_size,
-    uint64_t id,
-    base::StringPiece name,
-    bool readonly)
-    : mem_base_(static_cast<char*>(base)),
+PersistentMemoryAllocator::PersistentMemoryAllocator(void* base,
+                                                     size_t size,
+                                                     size_t page_size,
+                                                     uint64_t id,
+                                                     base::StringPiece name,
+                                                     bool readonly)
+    : PersistentMemoryAllocator(Memory(base, MEM_EXTERNAL),
+                                size,
+                                page_size,
+                                id,
+                                name,
+                                readonly) {}
+
+PersistentMemoryAllocator::PersistentMemoryAllocator(Memory memory,
+                                                     size_t size,
+                                                     size_t page_size,
+                                                     uint64_t id,
+                                                     base::StringPiece name,
+                                                     bool readonly)
+    : mem_base_(static_cast<char*>(memory.base)),
+      mem_type_(memory.type),
       mem_size_(static_cast<uint32_t>(size)),
       mem_page_(static_cast<uint32_t>((page_size ? page_size : size))),
       readonly_(readonly),
       corrupt_(0),
       allocs_histogram_(nullptr),
       used_histogram_(nullptr) {
+  // These asserts ensure that the structures are 32/64-bit agnostic and meet
+  // all the requirements of use within the allocator. They access private
+  // definitions and so cannot be moved to the global scope.
+  static_assert(sizeof(PersistentMemoryAllocator::BlockHeader) == 16,
+                "struct is not portable across different natural word widths");
+  static_assert(sizeof(PersistentMemoryAllocator::SharedMetadata) == 56,
+                "struct is not portable across different natural word widths");
+
   static_assert(sizeof(BlockHeader) % kAllocAlignment == 0,
                 "BlockHeader is not a multiple of kAllocAlignment");
   static_assert(sizeof(SharedMetadata) % kAllocAlignment == 0,
@@ -269,7 +311,7 @@ PersistentMemoryAllocator::PersistentMemoryAllocator(
                 "\"queue\" is not aligned properly; must be at end of struct");
 
   // Ensure that memory segment is of acceptable size.
-  CHECK(IsMemoryAcceptable(base, size, page_size, readonly));
+  CHECK(IsMemoryAcceptable(memory.base, size, page_size, readonly));
 
   // These atomics operate inter-process and so must be lock-free. The local
   // casts are to make sure it can be evaluated at compile time to a constant.
@@ -326,7 +368,7 @@ PersistentMemoryAllocator::PersistentMemoryAllocator(
     if (!name.empty()) {
       const size_t name_length = name.length() + 1;
       shared_meta()->name = Allocate(name_length, 0);
-      char* name_cstr = GetAsObject<char>(shared_meta()->name, 0);
+      char* name_cstr = GetAsArray<char>(shared_meta()->name, 0, name_length);
       if (name_cstr)
         memcpy(name_cstr, name.data(), name.length());
     }
@@ -355,7 +397,7 @@ PersistentMemoryAllocator::PersistentMemoryAllocator(
         *const_cast<uint32_t*>(&mem_page_) = shared_meta()->page_size;
 
       // Ensure that settings are still valid after the above adjustments.
-      if (!IsMemoryAcceptable(base, mem_size_, mem_page_, readonly))
+      if (!IsMemoryAcceptable(memory.base, mem_size_, mem_page_, readonly))
         SetCorrupt();
     }
   }
@@ -374,7 +416,8 @@ uint64_t PersistentMemoryAllocator::Id() const {
 
 const char* PersistentMemoryAllocator::Name() const {
   Reference name_ref = shared_meta()->name;
-  const char* name_cstr = GetAsObject<char>(name_ref, 0);
+  const char* name_cstr =
+      GetAsArray<char>(name_ref, 0, PersistentMemoryAllocator::kSizeAny);
   if (!name_cstr)
     return "";
 
@@ -408,6 +451,24 @@ void PersistentMemoryAllocator::CreateTrackingHistograms(
 size_t PersistentMemoryAllocator::used() const {
   return std::min(shared_meta()->freeptr.load(std::memory_order_relaxed),
                   mem_size_);
+}
+
+PersistentMemoryAllocator::Reference PersistentMemoryAllocator::GetAsReference(
+    const void* memory,
+    uint32_t type_id) const {
+  uintptr_t address = reinterpret_cast<uintptr_t>(memory);
+  if (address < reinterpret_cast<uintptr_t>(mem_base_))
+    return kReferenceNull;
+
+  uintptr_t offset = address - reinterpret_cast<uintptr_t>(mem_base_);
+  if (offset >= mem_size_ || offset < sizeof(BlockHeader))
+    return kReferenceNull;
+
+  Reference ref = static_cast<Reference>(offset) - sizeof(BlockHeader);
+  if (!GetBlockData(ref, type_id, kSizeAny))
+    return kReferenceNull;
+
+  return ref;
 }
 
 size_t PersistentMemoryAllocator::GetAllocSize(Reference ref) const {
@@ -739,37 +800,60 @@ LocalPersistentMemoryAllocator::LocalPersistentMemoryAllocator(
                                 size, 0, id, name, false) {}
 
 LocalPersistentMemoryAllocator::~LocalPersistentMemoryAllocator() {
-  DeallocateLocalMemory(const_cast<char*>(mem_base_), mem_size_);
+  DeallocateLocalMemory(const_cast<char*>(mem_base_), mem_size_, mem_type_);
 }
 
 // static
-void* LocalPersistentMemoryAllocator::AllocateLocalMemory(size_t size) {
+PersistentMemoryAllocator::Memory
+LocalPersistentMemoryAllocator::AllocateLocalMemory(size_t size) {
+  void* address;
+
 #if defined(OS_WIN)
-  void* address =
+  address =
       ::VirtualAlloc(nullptr, size, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
-  DPCHECK(address);
-  return address;
+  if (address)
+    return Memory(address, MEM_VIRTUAL);
+  UMA_HISTOGRAM_SPARSE_SLOWLY("UMA.LocalPersistentMemoryAllocator.Failures.Win",
+                              ::GetLastError());
 #elif defined(OS_POSIX)
   // MAP_ANON is deprecated on Linux but MAP_ANONYMOUS is not universal on Mac.
   // MAP_SHARED is not available on Linux <2.4 but required on Mac.
-  void* address = ::mmap(nullptr, size, PROT_READ | PROT_WRITE,
-                         MAP_ANON | MAP_SHARED, -1, 0);
-  DPCHECK(MAP_FAILED != address);
-  return address;
+  address = ::mmap(nullptr, size, PROT_READ | PROT_WRITE,
+                   MAP_ANON | MAP_SHARED, -1, 0);
+  if (address != MAP_FAILED)
+    return Memory(address, MEM_VIRTUAL);
+  UMA_HISTOGRAM_SPARSE_SLOWLY(
+      "UMA.LocalPersistentMemoryAllocator.Failures.Posix", errno);
 #else
 #error This architecture is not (yet) supported.
 #endif
+
+  // As a last resort, just allocate the memory from the heap. This will
+  // achieve the same basic result but the acquired memory has to be
+  // explicitly zeroed and thus realized immediately (i.e. all pages are
+  // added to the process now istead of only when first accessed).
+  address = malloc(size);
+  DPCHECK(address);
+  memset(address, 0, size);
+  return Memory(address, MEM_MALLOC);
 }
 
 // static
 void LocalPersistentMemoryAllocator::DeallocateLocalMemory(void* memory,
-                                                           size_t size) {
+                                                           size_t size,
+                                                           MemoryType type) {
+  if (type == MEM_MALLOC) {
+    free(memory);
+    return;
+  }
+
+  DCHECK_EQ(MEM_VIRTUAL, type);
 #if defined(OS_WIN)
   BOOL success = ::VirtualFree(memory, 0, MEM_DECOMMIT);
-  DPCHECK(success);
+  DCHECK(success);
 #elif defined(OS_POSIX)
   int result = ::munmap(memory, size);
-  DPCHECK(0 == result);
+  DCHECK_EQ(0, result);
 #else
 #error This architecture is not (yet) supported.
 #endif
@@ -783,12 +867,13 @@ SharedPersistentMemoryAllocator::SharedPersistentMemoryAllocator(
     uint64_t id,
     base::StringPiece name,
     bool read_only)
-    : PersistentMemoryAllocator(static_cast<uint8_t*>(memory->memory()),
-                                memory->mapped_size(),
-                                0,
-                                id,
-                                name,
-                                read_only),
+    : PersistentMemoryAllocator(
+          Memory(static_cast<uint8_t*>(memory->memory()), MEM_SHARED),
+          memory->mapped_size(),
+          0,
+          id,
+          name,
+          read_only),
       shared_memory_(std::move(memory)) {}
 
 SharedPersistentMemoryAllocator::~SharedPersistentMemoryAllocator() {}
@@ -809,12 +894,13 @@ FilePersistentMemoryAllocator::FilePersistentMemoryAllocator(
     uint64_t id,
     base::StringPiece name,
     bool read_only)
-    : PersistentMemoryAllocator(const_cast<uint8_t*>(file->data()),
-                                max_size != 0 ? max_size : file->length(),
-                                0,
-                                id,
-                                name,
-                                read_only),
+    : PersistentMemoryAllocator(
+          Memory(const_cast<uint8_t*>(file->data()), MEM_FILE),
+          max_size != 0 ? max_size : file->length(),
+          0,
+          id,
+          name,
+          read_only),
       mapped_file_(std::move(file)) {}
 
 FilePersistentMemoryAllocator::~FilePersistentMemoryAllocator() {}

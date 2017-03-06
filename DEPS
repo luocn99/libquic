@@ -3,7 +3,7 @@
 
 # START #
 {
-    "chromium_revision": "55.0.2861.0",
+    "chromium_revision": "58.0.3015.0",
     "dependency_exclude": [
         "zconf.h",
         "modp_b64.h",
@@ -38,7 +38,6 @@
             "action": "copy",
             "target": [
                 "LICENSE",
-                "AUTHORS",
                 "base/cancelable_callback.h",
                 "base/sequence_checker.h",
                 "base/debug/debugger.h",
@@ -47,7 +46,6 @@
                 "base/third_party/dmg_fp/g_fmt.cc",
                 "base/third_party/superfasthash/superfasthash.c",
                 "base/strings/string_util_constants.cc",
-                "base/threading/thread_local_android.cc",
                 "base/files/file_path_constants.cc",
                 "net/base/completion_callback.h",
                 "net/base/host_port_pair.h",

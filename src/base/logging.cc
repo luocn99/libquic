@@ -7,6 +7,7 @@
 #include <limits.h>
 #include <stdint.h>
 
+#include "base/debug/activity_tracker.h"
 #include "base/macros.h"
 #include "build/build_config.h"
 
@@ -722,6 +723,12 @@ LogMessage::~LogMessage() {
   }
 
   if (severity_ == LOG_FATAL) {
+    // Write the log message to the global activity tracker, if running.
+    base::debug::GlobalActivityTracker* tracker =
+        base::debug::GlobalActivityTracker::Get();
+    if (tracker)
+      tracker->RecordLogMessage(str_newline);
+
     // Ensure the first characters of the string are on the stack so they
     // are contained in minidumps for diagnostic purposes.
     char str_stack[1024];
@@ -765,13 +772,12 @@ void LogMessage::Init(const char* file, int line) {
   if (g_log_thread_id)
     stream_ << base::PlatformThread::CurrentId() << ':';
   if (g_log_timestamp) {
-    time_t t = time(nullptr);
-    struct tm local_time = {0};
-#ifdef _MSC_VER
-    localtime_s(&local_time, &t);
-#else
+#if defined(OS_POSIX)
+    timeval tv;
+    gettimeofday(&tv, nullptr);
+    time_t t = tv.tv_sec;
+    struct tm local_time;
     localtime_r(&t, &local_time);
-#endif
     struct tm* tm_time = &local_time;
     stream_ << std::setfill('0')
             << std::setw(2) << 1 + tm_time->tm_mon
@@ -780,7 +786,23 @@ void LogMessage::Init(const char* file, int line) {
             << std::setw(2) << tm_time->tm_hour
             << std::setw(2) << tm_time->tm_min
             << std::setw(2) << tm_time->tm_sec
+            << '.'
+            << std::setw(6) << tv.tv_usec
             << ':';
+#elif defined(OS_WIN)
+    SYSTEMTIME local_time;
+    GetLocalTime(&local_time);
+    stream_ << std::setfill('0')
+            << std::setw(2) << local_time.wMonth
+            << std::setw(2) << local_time.wDay
+            << '/'
+            << std::setw(2) << local_time.wHour
+            << std::setw(2) << local_time.wMinute
+            << std::setw(2) << local_time.wSecond
+            << '.'
+            << std::setw(3) << local_time.wMilliseconds
+            << ':';
+#endif
   }
   if (g_log_tickcount)
     stream_ << TickCount() << ':';

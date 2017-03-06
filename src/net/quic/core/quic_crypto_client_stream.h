@@ -10,6 +10,7 @@
 #include <string>
 
 #include "base/macros.h"
+#include "net/base/net_export.h"
 #include "net/quic/core/crypto/channel_id.h"
 #include "net/quic/core/crypto/proof_verifier.h"
 #include "net/quic/core/crypto/quic_crypto_client_config.h"
@@ -97,6 +98,8 @@ class NET_EXPORT_PRIVATE QuicCryptoClientStream
   // Returns true if our ChannelIDSourceCallback was run, which implies the
   // ChannelIDSource operated asynchronously. Intended for testing.
   bool WasChannelIDSourceCallbackRun() const;
+
+  std::string chlo_hash() const { return chlo_hash_; }
 
  private:
   // ChannelIDSourceCallbackImpl is passed as the callback method to

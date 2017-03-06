@@ -13,9 +13,9 @@
 #include "base/macros.h"
 #include "net/base/net_export.h"
 #include "net/quic/core/quic_bandwidth.h"
-#include "net/quic/core/quic_clock.h"
 #include "net/quic/core/quic_connection_stats.h"
 #include "net/quic/core/quic_time.h"
+#include "net/quic/platform/api/quic_clock.h"
 
 namespace net {
 
@@ -44,6 +44,8 @@ class NET_EXPORT_PRIVATE CubicBytes {
   // Call on ack arrival when sender is unable to use the available congestion
   // window. Resets Cubic state during quiescence.
   void OnApplicationLimited();
+
+  void SetFixConvexMode(bool fix_convex_mode);
 
  private:
   static const QuicTime::Delta MaxCubicTimeInterval() {
@@ -88,6 +90,10 @@ class NET_EXPORT_PRIVATE CubicBytes {
 
   // Last congestion window in packets computed by cubic function.
   QuicByteCount last_target_congestion_window_;
+
+  // Fix convex mode for cubic.
+  // TODO(jokulik):  Remove once the cubic convex experiment is done.
+  bool fix_convex_mode_;
 
   DISALLOW_COPY_AND_ASSIGN(CubicBytes);
 };

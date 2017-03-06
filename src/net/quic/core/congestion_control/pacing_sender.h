@@ -17,10 +17,11 @@
 #include <memory>
 
 #include "base/macros.h"
+#include "net/base/net_export.h"
 #include "net/quic/core/congestion_control/send_algorithm_interface.h"
 #include "net/quic/core/quic_bandwidth.h"
 #include "net/quic/core/quic_config.h"
-#include "net/quic/core/quic_protocol.h"
+#include "net/quic/core/quic_packets.h"
 #include "net/quic/core/quic_time.h"
 
 namespace net {
@@ -42,6 +43,7 @@ class NET_EXPORT_PRIVATE PacingSender {
   void OnCongestionEvent(
       bool rtt_updated,
       QuicByteCount bytes_in_flight,
+      QuicTime event_time,
       const SendAlgorithmInterface::CongestionVector& acked_packets,
       const SendAlgorithmInterface::CongestionVector& lost_packets);
   bool OnPacketSent(QuicTime sent_time,

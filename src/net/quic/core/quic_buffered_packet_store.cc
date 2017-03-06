@@ -8,8 +8,7 @@
 
 #include "base/stl_util.h"
 #include "net/quic/core/quic_bug_tracker.h"
-
-using std::list;
+#include "net/quic/core/quic_flags.h"
 
 namespace net {
 
@@ -44,8 +43,8 @@ class ConnectionExpireAlarm : public QuicAlarm::Delegate {
 }  // namespace
 
 BufferedPacket::BufferedPacket(std::unique_ptr<QuicReceivedPacket> packet,
-                               IPEndPoint server_address,
-                               IPEndPoint client_address)
+                               QuicSocketAddress server_address,
+                               QuicSocketAddress client_address)
     : packet(std::move(packet)),
       server_address(server_address),
       client_address(client_address) {}
@@ -81,9 +80,11 @@ QuicBufferedPacketStore::~QuicBufferedPacketStore() {}
 EnqueuePacketResult QuicBufferedPacketStore::EnqueuePacket(
     QuicConnectionId connection_id,
     const QuicReceivedPacket& packet,
-    IPEndPoint server_address,
-    IPEndPoint client_address,
+    QuicSocketAddress server_address,
+    QuicSocketAddress client_address,
     bool is_chlo) {
+  QUIC_BUG_IF(!FLAGS_quic_allow_chlo_buffering)
+      << "Shouldn't buffer packets if disabled via flag.";
   QUIC_BUG_IF(is_chlo &&
               base::ContainsKey(connections_with_chlo_, connection_id))
       << "Shouldn't buffer duplicated CHLO on connection " << connection_id;
@@ -145,15 +146,20 @@ bool QuicBufferedPacketStore::HasChlosBuffered() const {
   return !connections_with_chlo_.empty();
 }
 
-list<BufferedPacket> QuicBufferedPacketStore::DeliverPackets(
+std::list<BufferedPacket> QuicBufferedPacketStore::DeliverPackets(
     QuicConnectionId connection_id) {
-  list<BufferedPacket> packets_to_deliver;
+  std::list<BufferedPacket> packets_to_deliver;
   auto it = undecryptable_packets_.find(connection_id);
   if (it != undecryptable_packets_.end()) {
     packets_to_deliver = std::move(it->second.buffered_packets);
     undecryptable_packets_.erase(connection_id);
   }
   return packets_to_deliver;
+}
+
+void QuicBufferedPacketStore::DiscardPackets(QuicConnectionId connection_id) {
+  undecryptable_packets_.erase(connection_id);
+  connections_with_chlo_.erase(connection_id);
 }
 
 void QuicBufferedPacketStore::OnExpirationTimeout() {
@@ -169,7 +175,7 @@ void QuicBufferedPacketStore::OnExpirationTimeout() {
     connections_with_chlo_.erase(connection_id);
   }
   if (!undecryptable_packets_.empty()) {
-    expiration_alarm_->Set(clock_->ApproximateNow() + connection_life_span_);
+    MaybeSetExpirationAlarm();
   }
 }
 
@@ -196,16 +202,17 @@ bool QuicBufferedPacketStore::ShouldBufferPacket(bool is_chlo) {
   return is_store_full || reach_non_chlo_limit;
 }
 
-list<BufferedPacket> QuicBufferedPacketStore::DeliverPacketsForNextConnection(
+std::list<BufferedPacket>
+QuicBufferedPacketStore::DeliverPacketsForNextConnection(
     QuicConnectionId* connection_id) {
   if (connections_with_chlo_.empty()) {
     // Returns empty list if no CHLO has been buffered.
-    return list<BufferedPacket>();
+    return std::list<BufferedPacket>();
   }
   *connection_id = connections_with_chlo_.front().first;
   connections_with_chlo_.erase(connections_with_chlo_.begin());
 
-  list<BufferedPacket> packets = DeliverPackets(*connection_id);
+  std::list<BufferedPacket> packets = DeliverPackets(*connection_id);
   DCHECK(!packets.empty()) << "Try to deliver connectons without CHLO";
   return packets;
 }

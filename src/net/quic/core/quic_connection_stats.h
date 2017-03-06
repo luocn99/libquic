@@ -12,7 +12,7 @@
 
 #include "net/base/net_export.h"
 #include "net/quic/core/quic_bandwidth.h"
-#include "net/quic/core/quic_protocol.h"
+#include "net/quic/core/quic_packets.h"
 #include "net/quic/core/quic_time.h"
 
 namespace net {
@@ -86,6 +86,9 @@ struct NET_EXPORT_PRIVATE QuicConnectionStats {
 
   // Creation time, as reported by the QuicClock.
   QuicTime connection_creation_time;
+
+  uint64_t blocked_frames_received;
+  uint64_t blocked_frames_sent;
 };
 
 }  // namespace net

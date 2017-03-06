@@ -16,18 +16,17 @@
 #include <vector>
 
 #include "base/macros.h"
+#include "net/base/net_export.h"
 #include "net/quic/core/crypto/quic_compressed_certs_cache.h"
 #include "net/quic/core/quic_crypto_server_stream.h"
-#include "net/quic/core/quic_protocol.h"
+#include "net/quic/core/quic_packets.h"
 #include "net/quic/core/quic_spdy_session.h"
 
 namespace net {
 
-class QuicBlockedWriterInterface;
 class QuicConfig;
 class QuicConnection;
 class QuicCryptoServerConfig;
-class ReliableQuicStream;
 
 namespace test {
 class QuicServerSessionBasePeer;
@@ -36,44 +35,19 @@ class QuicSimpleServerSessionPeer;
 
 class NET_EXPORT_PRIVATE QuicServerSessionBase : public QuicSpdySession {
  public:
-  // An interface from the session to the entity owning the session.
-  // This lets the session notify its owner (the Dispatcher) when the connection
-  // is closed, blocked, or added/removed from the time-wait std::list.
-  class Visitor {
-   public:
-    virtual ~Visitor() {}
-
-    // Called when the connection is closed.
-    virtual void OnConnectionClosed(QuicConnectionId connection_id,
-                                    QuicErrorCode error,
-                                    const std::string& error_details) = 0;
-
-    // Called when the session has become write blocked.
-    virtual void OnWriteBlocked(QuicBlockedWriterInterface* blocked_writer) = 0;
-
-    // Called after the given connection is added to the time-wait std::list.
-    virtual void OnConnectionAddedToTimeWaitList(
-        QuicConnectionId connection_id) = 0;
-
-    // Called before a packet is going to be processed by |session|.
-    virtual void OnPacketBeingDispatchedToSession(
-        QuicServerSessionBase* session) = 0;
-  };
-
   // Does not take ownership of |connection|. |crypto_config| must outlive the
   // session. |helper| must outlive any created crypto streams.
   QuicServerSessionBase(const QuicConfig& config,
                         QuicConnection* connection,
-                        Visitor* visitor,
+                        QuicSession::Visitor* visitor,
                         QuicCryptoServerStream::Helper* helper,
                         const QuicCryptoServerConfig* crypto_config,
                         QuicCompressedCertsCache* compressed_certs_cache);
 
-  // Override the base class to notify the owner of the connection close.
+  // Override the base class to cancel any ongoing asychronous crypto.
   void OnConnectionClosed(QuicErrorCode error,
                           const std::string& error_details,
                           ConnectionCloseSource source) override;
-  void OnWriteBlocked() override;
 
   // Sends a server config update to the client, containing new bandwidth
   // estimate.
@@ -94,8 +68,6 @@ class NET_EXPORT_PRIVATE QuicServerSessionBase : public QuicSpdySession {
   void set_serving_region(const std::string& serving_region) {
     serving_region_ = serving_region;
   }
-
-  bool server_push_enabled() const { return server_push_enabled_; }
 
  protected:
   // QuicSession methods(override them with return type of QuicSpdyStream*):
@@ -118,10 +90,6 @@ class NET_EXPORT_PRIVATE QuicServerSessionBase : public QuicSpdySession {
 
   const QuicCryptoServerConfig* crypto_config() { return crypto_config_; }
 
-  void set_server_push_enabled(bool enable) { server_push_enabled_ = enable; }
-
-  Visitor* visitor() { return visitor_; }
-
   QuicCryptoServerStream::Helper* stream_helper() { return helper_; }
 
  private:
@@ -135,7 +103,6 @@ class NET_EXPORT_PRIVATE QuicServerSessionBase : public QuicSpdySession {
   QuicCompressedCertsCache* compressed_certs_cache_;
 
   std::unique_ptr<QuicCryptoServerStreamBase> crypto_stream_;
-  Visitor* visitor_;
 
   // Pointer to the helper used to create crypto server streams. Must outlive
   // streams created via CreateQuicCryptoServerStream.
@@ -162,10 +129,6 @@ class NET_EXPORT_PRIVATE QuicServerSessionBase : public QuicSpdySession {
   // should go away once we fix http://b//27897982
   int32_t BandwidthToCachedParameterBytesPerSecond(
       const QuicBandwidth& bandwidth);
-
-  // Set during handshake. If true, resources in x-associated-content and link
-  // headers will be pushed. see: go/gfe_server_push.
-  bool server_push_enabled_;
 
   DISALLOW_COPY_AND_ASSIGN(QuicServerSessionBase);
 };

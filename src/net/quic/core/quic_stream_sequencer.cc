@@ -9,29 +9,30 @@
 #include <string>
 #include <utility>
 
+#include "base/format_macros.h"
 #include "base/logging.h"
 #include "base/strings/string_number_conversions.h"
+#include "base/strings/stringprintf.h"
 #include "net/quic/core/quic_bug_tracker.h"
-#include "net/quic/core/quic_clock.h"
 #include "net/quic/core/quic_flags.h"
-#include "net/quic/core/quic_protocol.h"
+#include "net/quic/core/quic_packets.h"
+#include "net/quic/core/quic_stream.h"
 #include "net/quic/core/quic_stream_sequencer_buffer.h"
 #include "net/quic/core/quic_utils.h"
-#include "net/quic/core/reliable_quic_stream.h"
+#include "net/quic/platform/api/quic_clock.h"
 
 using base::IntToString;
 using base::StringPiece;
-using std::min;
-using std::numeric_limits;
+using base::StringPrintf;
 using std::string;
 
 namespace net {
 
-QuicStreamSequencer::QuicStreamSequencer(ReliableQuicStream* quic_stream,
+QuicStreamSequencer::QuicStreamSequencer(QuicStream* quic_stream,
                                          const QuicClock* clock)
     : stream_(quic_stream),
       buffered_frames_(kStreamReceiveWindowLimit),
-      close_offset_(numeric_limits<QuicStreamOffset>::max()),
+      close_offset_(std::numeric_limits<QuicStreamOffset>::max()),
       blocked_(false),
       num_frames_received_(0),
       num_duplicate_frames_received_(0),
@@ -58,10 +59,10 @@ void QuicStreamSequencer::OnStreamFrame(const QuicStreamFrame& frame) {
       clock_->ApproximateNow(), &bytes_written, &error_details);
   if (result != QUIC_NO_ERROR) {
     string details = "Stream" + base::Uint64ToString(stream_->id()) + ": " +
-                     QuicUtils::ErrorToString(result) + ": " + error_details +
+                     QuicErrorCodeToString(result) + ": " + error_details +
                      "\nPeer Address: " +
                      stream_->PeerAddressOfLatestPacket().ToString();
-    DLOG(WARNING) << QuicUtils::ErrorToString(result);
+    DLOG(WARNING) << QuicErrorCodeToString(result);
     DLOG(WARNING) << details;
     stream_->CloseConnectionWithDetails(result, details);
     return;
@@ -87,7 +88,8 @@ void QuicStreamSequencer::OnStreamFrame(const QuicStreamFrame& frame) {
 }
 
 void QuicStreamSequencer::CloseStreamAtOffset(QuicStreamOffset offset) {
-  const QuicStreamOffset kMaxOffset = numeric_limits<QuicStreamOffset>::max();
+  const QuicStreamOffset kMaxOffset =
+      std::numeric_limits<QuicStreamOffset>::max();
 
   // If there is a scheduled close, the new offset should match it.
   if (close_offset_ != kMaxOffset && offset != close_offset_) {
@@ -135,7 +137,17 @@ bool QuicStreamSequencer::GetReadableRegion(iovec* iov,
 
 int QuicStreamSequencer::Readv(const struct iovec* iov, size_t iov_len) {
   DCHECK(!blocked_);
-  size_t bytes_read = buffered_frames_.Readv(iov, iov_len);
+  string error_details;
+  size_t bytes_read;
+  QuicErrorCode read_error =
+      buffered_frames_.Readv(iov, iov_len, &bytes_read, &error_details);
+  if (read_error != QUIC_NO_ERROR) {
+    string details = StringPrintf("Stream %" PRIu32 ": %s", stream_->id(),
+                                  error_details.c_str());
+    stream_->CloseConnectionWithDetails(read_error, details);
+    return static_cast<int>(bytes_read);
+  }
+
   stream_->AddBytesConsumed(bytes_read);
   return static_cast<int>(bytes_read);
 }
@@ -182,6 +194,12 @@ void QuicStreamSequencer::StopReading() {
 
 void QuicStreamSequencer::ReleaseBuffer() {
   buffered_frames_.ReleaseWholeBuffer();
+}
+
+void QuicStreamSequencer::ReleaseBufferIfEmpty() {
+  if (buffered_frames_.Empty()) {
+    buffered_frames_.ReleaseWholeBuffer();
+  }
 }
 
 void QuicStreamSequencer::FlushBufferedFrames() {

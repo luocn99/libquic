@@ -6,7 +6,10 @@
 #define NET_QUIC_QUIC_SENT_PACKET_MANAGER_INTERFACE_H_
 
 #include "base/macros.h"
-#include "net/quic/core/quic_protocol.h"
+#include "net/base/net_export.h"
+#include "net/quic/core/congestion_control/send_algorithm_interface.h"
+#include "net/quic/core/quic_packets.h"
+#include "net/quic/core/quic_pending_retransmission.h"
 #include "net/quic/core/quic_sustained_bandwidth_recorder.h"
 
 namespace net {
@@ -97,7 +100,7 @@ class NET_EXPORT_PRIVATE QuicSentPacketManagerInterface {
 
   virtual bool HasPendingRetransmissions() const = 0;
 
-  virtual PendingRetransmission NextPendingRetransmission() = 0;
+  virtual QuicPendingRetransmission NextPendingRetransmission() = 0;
 
   // Returns true if the default path has unacked packets.
   virtual bool HasUnackedPackets() const = 0;
@@ -165,8 +168,6 @@ class NET_EXPORT_PRIVATE QuicSentPacketManagerInterface {
   virtual void OnConnectionMigration(QuicPathId path_id,
                                      PeerAddressChangeType type) = 0;
 
-  virtual bool IsHandshakeConfirmed() const = 0;
-
   virtual void SetDebugDelegate(DebugDelegate* debug_delegate) = 0;
 
   virtual QuicPacketNumber GetLargestObserved(QuicPathId path_id) const = 0;
@@ -189,6 +190,10 @@ class NET_EXPORT_PRIVATE QuicSentPacketManagerInterface {
   // Signals to the congestion controller that the connection has no outstanding
   // data to send.
   virtual void OnApplicationLimited() = 0;
+
+  // Returns the currently used congestion control algorithm.  The manager
+  // retains the ownership of the algorithm.
+  virtual const SendAlgorithmInterface* GetSendAlgorithm() const = 0;
 };
 
 }  // namespace net

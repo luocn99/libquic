@@ -52,7 +52,6 @@ def main():
     files = set()
 
     excludes = [os.path.join(chromium_root, x) for x in deps.get("dependency_exclude", [])]
-
     processor = PreProcessor(chromium_root, dict={'OS_POSIX': 1, 'OS_MAXOSX': 1, 'OS_OPENBSD': 1, 'OS_ANDROID': 1, 'OS_LINUX': 1}, excludes=excludes)
 
     q = deps.get("automatic_dependency", [])
@@ -61,6 +60,8 @@ def main():
         print("Tracking dependencies of {}".format(autodep))
 
         depends = [os.path.join(chromium_root, autodep)] + processor(os.path.join(chromium_root, autodep))
+        print("depends:")
+        print(depends)
 
         for node in depends:
             if node.startswith(chromium_root):

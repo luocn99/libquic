@@ -8,7 +8,6 @@
 
 #include "net/quic/core/quic_flags.h"
 
-using std::min;
 
 namespace net {
 namespace {
@@ -41,6 +40,7 @@ void PacingSender::set_sender(SendAlgorithmInterface* sender) {
 void PacingSender::OnCongestionEvent(
     bool rtt_updated,
     QuicByteCount bytes_in_flight,
+    QuicTime event_time,
     const SendAlgorithmInterface::CongestionVector& acked_packets,
     const SendAlgorithmInterface::CongestionVector& lost_packets) {
   DCHECK(sender_ != nullptr);
@@ -48,8 +48,8 @@ void PacingSender::OnCongestionEvent(
     // Clear any burst tokens when entering recovery.
     burst_tokens_ = 0;
   }
-  sender_->OnCongestionEvent(rtt_updated, bytes_in_flight, acked_packets,
-                             lost_packets);
+  sender_->OnCongestionEvent(rtt_updated, bytes_in_flight, event_time,
+                             acked_packets, lost_packets);
 }
 
 bool PacingSender::OnPacketSent(
@@ -70,7 +70,7 @@ bool PacingSender::OnPacketSent(
     // Add more burst tokens anytime the connection is leaving quiescence, but
     // limit it to the equivalent of a single bulk write, not exceeding the
     // current CWND in packets.
-    burst_tokens_ = min(
+    burst_tokens_ = std::min(
         kInitialUnpacedBurst,
         static_cast<uint32_t>(sender_->GetCongestionWindow() / kDefaultTCPMSS));
   }
@@ -145,8 +145,8 @@ QuicBandwidth PacingSender::PacingRate(QuicByteCount bytes_in_flight) const {
   DCHECK(sender_ != nullptr);
   if (!max_pacing_rate_.IsZero()) {
     return QuicBandwidth::FromBitsPerSecond(
-        min(max_pacing_rate_.ToBitsPerSecond(),
-            sender_->PacingRate(bytes_in_flight).ToBitsPerSecond()));
+        std::min(max_pacing_rate_.ToBitsPerSecond(),
+                 sender_->PacingRate(bytes_in_flight).ToBitsPerSecond()));
   }
   return sender_->PacingRate(bytes_in_flight);
 }

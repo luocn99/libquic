@@ -15,21 +15,16 @@ namespace net {
 
 QuicPacketGenerator::QuicPacketGenerator(QuicConnectionId connection_id,
                                          QuicFramer* framer,
-                                         QuicRandom* random_generator,
                                          QuicBufferAllocator* buffer_allocator,
                                          DelegateInterface* delegate)
     : delegate_(delegate),
-      packet_creator_(connection_id,
-                      framer,
-                      random_generator,
-                      buffer_allocator,
-                      delegate),
+      packet_creator_(connection_id, framer, buffer_allocator, delegate),
       batch_mode_(false),
       should_send_ack_(false),
       should_send_stop_waiting_(false) {}
 
 QuicPacketGenerator::~QuicPacketGenerator() {
-  QuicUtils::DeleteFrames(&queued_control_frames_);
+  DeleteFrames(&queued_control_frames_);
 }
 
 void QuicPacketGenerator::SetShouldSendAck(bool also_send_stop_waiting) {
@@ -195,7 +190,22 @@ void QuicPacketGenerator::SendQueuedFrames(bool flush) {
   // Only add pending frames if we are SURE we can then send the whole packet.
   while (HasPendingFrames() &&
          (flush || CanSendWithNextPendingFrameAddition())) {
-    AddNextPendingFrame();
+    bool first_frame = packet_creator_.CanSetMaxPacketLength();
+    if (!AddNextPendingFrame() && first_frame) {
+      // A single frame cannot fit into the packet, tear down the connection.
+      QUIC_BUG << "A single frame cannot fit into packet."
+               << " should_send_ack: " << should_send_ack_
+               << " should_send_stop_waiting: " << should_send_stop_waiting_
+               << " number of queued_control_frames: "
+               << queued_control_frames_.size();
+      if (!queued_control_frames_.empty()) {
+        DVLOG(1) << queued_control_frames_[0];
+      }
+      delegate_->OnUnrecoverableError(QUIC_FAILED_TO_SERIALIZE_PACKET,
+                                      "Single frame cannot fit into a packet",
+                                      ConnectionCloseSource::FROM_SELF);
+      return;
+    }
   }
   if (flush || !InBatchMode()) {
     packet_creator_.Flush();
@@ -281,13 +291,14 @@ void QuicPacketGenerator::SetMaxPacketLength(QuicByteCount length) {
   packet_creator_.SetMaxPacketLength(length);
 }
 
-QuicEncryptedPacket* QuicPacketGenerator::SerializeVersionNegotiationPacket(
+std::unique_ptr<QuicEncryptedPacket>
+QuicPacketGenerator::SerializeVersionNegotiationPacket(
     const QuicVersionVector& supported_versions) {
   return packet_creator_.SerializeVersionNegotiationPacket(supported_versions);
 }
 
 void QuicPacketGenerator::ReserializeAllFrames(
-    const PendingRetransmission& retransmission,
+    const QuicPendingRetransmission& retransmission,
     char* buffer,
     size_t buffer_len) {
   packet_creator_.ReserializeAllFrames(retransmission, buffer, buffer_len);

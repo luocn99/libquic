@@ -9,8 +9,9 @@
 #include <map>
 
 #include "base/macros.h"
+#include "net/base/net_export.h"
 #include "net/quic/core/congestion_control/loss_detection_interface.h"
-#include "net/quic/core/quic_protocol.h"
+#include "net/quic/core/quic_packets.h"
 #include "net/quic/core/quic_time.h"
 #include "net/quic/core/quic_unacked_packet_map.h"
 
@@ -64,6 +65,8 @@ class NET_EXPORT_PRIVATE GeneralLossAlgorithm : public LossDetectionInterface {
   // loss.  Fraction calculated by shifting max(SRTT, latest_rtt) to the right
   // by reordering_shift.
   int reordering_shift_;
+  // The largest newly acked from the previous call to DetectLosses.
+  QuicPacketNumber largest_previously_acked_;
 
   DISALLOW_COPY_AND_ASSIGN(GeneralLossAlgorithm);
 };

@@ -6,6 +6,7 @@
 
 #include <memory>
 
+#include "base/stl_util.h"
 #include "base/strings/string_number_conversions.h"
 #include "base/strings/stringprintf.h"
 #include "net/quic/core/crypto/crypto_framer.h"
@@ -17,7 +18,6 @@
 using base::StringPiece;
 using base::StringPrintf;
 using std::string;
-using std::vector;
 
 namespace net {
 
@@ -108,6 +108,10 @@ bool CryptoHandshakeMessage::GetStringPiece(QuicTag tag,
   }
   *out = it->second;
   return true;
+}
+
+bool CryptoHandshakeMessage::HasStringPiece(QuicTag tag) const {
+  return base::ContainsKey(tag_value_map_, tag);
 }
 
 QuicErrorCode CryptoHandshakeMessage::GetNthValue24(QuicTag tag,
@@ -207,11 +211,11 @@ QuicErrorCode CryptoHandshakeMessage::GetPOD(QuicTag tag,
 }
 
 string CryptoHandshakeMessage::DebugStringInternal(size_t indent) const {
-  string ret = string(2 * indent, ' ') + QuicUtils::TagToString(tag_) + "<\n";
+  string ret = string(2 * indent, ' ') + QuicTagToString(tag_) + "<\n";
   ++indent;
   for (QuicTagValueMap::const_iterator it = tag_value_map_.begin();
        it != tag_value_map_.end(); ++it) {
-    ret += string(2 * indent, ' ') + QuicUtils::TagToString(it->first) + ": ";
+    ret += string(2 * indent, ' ') + QuicTagToString(it->first) + ": ";
 
     bool done = false;
     switch (it->first) {
@@ -222,6 +226,9 @@ string CryptoHandshakeMessage::DebugStringInternal(size_t indent) const {
       case kMSPC:
       case kSRBF:
       case kSWND:
+      case kMIDS:
+      case kSCLS:
+      case kTCID:
         // uint32_t value
         if (it->second.size() == 4) {
           uint32_t value;
@@ -253,7 +260,7 @@ string CryptoHandshakeMessage::DebugStringInternal(size_t indent) const {
             if (j > 0) {
               ret += ",";
             }
-            ret += "'" + QuicUtils::TagToString(tag) + "'";
+            ret += "'" + QuicTagToString(tag) + "'";
           }
           done = true;
         }
@@ -278,7 +285,7 @@ string CryptoHandshakeMessage::DebugStringInternal(size_t indent) const {
         if (!it->second.empty()) {
           QuicSocketAddressCoder decoder;
           if (decoder.Decode(it->second.data(), it->second.size())) {
-            ret += IPAddressToStringWithPort(decoder.ip(), decoder.port());
+            ret += QuicSocketAddress(decoder.ip(), decoder.port()).ToString();
             done = true;
           }
         }

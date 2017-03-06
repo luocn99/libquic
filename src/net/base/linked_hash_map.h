@@ -24,6 +24,8 @@
 #include "base/logging.h"
 #include "base/macros.h"
 
+namespace net {
+
 // This holds a list of pair<Key, Value> items.  This list is what gets
 // traversed, and it's iterators from this list that we return from
 // begin/end/find.
@@ -114,6 +116,9 @@ class linked_hash_map {
   bool empty() const {
     return list_.empty();
   }
+
+  // Removes the first element from the list.
+  void pop_front() { erase(begin()); }
 
   // Erases values with the provided key.  Returns the number of elements
   // erased.  In this implementation, this will be 0 or 1.
@@ -253,5 +258,7 @@ class linked_hash_map {
   // or copy assignment operator would result in an inconsistent state.
   DISALLOW_COPY_AND_ASSIGN(linked_hash_map);
 };
+
+}  // namespace net
 
 #endif  // UTIL_GTL_LINKED_HASH_MAP_H_

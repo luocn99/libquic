@@ -44,7 +44,7 @@ class NET_EXPORT_PRIVATE HpackDecoderInterface {
   // Discards the handler supplied at the start of decoding the block.
   // TODO(jamessynge): Determine if compressed_len is needed; it is used to
   // produce UUMA stat Net.SpdyHpackDecompressionPercentage, but only for
-  // SPDY3, not HTTP2.
+  // deprecated SPDY3.
   virtual bool HandleControlFrameHeadersComplete(size_t* compressed_len) = 0;
 
   // Accessor for the most recently decoded headers block. Valid until the next
@@ -56,7 +56,7 @@ class NET_EXPORT_PRIVATE HpackDecoderInterface {
   virtual void SetHeaderTableDebugVisitor(
       std::unique_ptr<HpackHeaderTable::DebugVisitorInterface> visitor) = 0;
 
-  // How much encoded data this decoder is willing to buffer.
+  // Set how much encoded data this decoder is willing to buffer.
   virtual void set_max_decode_buffer_size_bytes(
       size_t max_decode_buffer_size_bytes) = 0;
 };

@@ -20,7 +20,6 @@
 #include "url/url_canon.h"
 
 using base::StringPiece;
-using std::numeric_limits;
 using std::string;
 
 namespace net {
@@ -191,7 +190,7 @@ bool CryptoUtils::ExportKeyingMaterial(StringPiece subkey_secret,
     }
   }
   // Create HKDF info input: null-terminated label + length-prefixed context
-  if (context.length() >= numeric_limits<uint32_t>::max()) {
+  if (context.length() >= std::numeric_limits<uint32_t>::max()) {
     LOG(ERROR) << "Context value longer than 2^32";
     return false;
   }

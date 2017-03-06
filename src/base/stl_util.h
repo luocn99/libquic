@@ -29,38 +29,6 @@ void STLClearObject(T* obj) {
   obj->reserve(0);
 }
 
-// For a range within a container of pointers, calls delete (non-array version)
-// on these pointers.
-// NOTE: for these three functions, we could just implement a DeleteObject
-// functor and then call for_each() on the range and functor, but this
-// requires us to pull in all of algorithm.h, which seems expensive.
-// For hash_[multi]set, it is important that this deletes behind the iterator
-// because the hash_set may call the hash function on the iterator when it is
-// advanced, which could result in the hash function trying to deference a
-// stale pointer.
-template <class ForwardIterator>
-void STLDeleteContainerPointers(ForwardIterator begin, ForwardIterator end) {
-  while (begin != end) {
-    ForwardIterator temp = begin;
-    ++begin;
-    delete *temp;
-  }
-}
-
-// For a range within a container of pairs, calls delete.
-// NOTE: Like STLDeleteContainerPointers, deleting behind the iterator.
-// Deleting the value does not always invalidate the iterator, but it may
-// do so if the key is a pointer into the value object.
-template <class ForwardIterator>
-void STLDeleteContainerPairSecondPointers(ForwardIterator begin,
-                                          ForwardIterator end) {
-  while (begin != end) {
-    ForwardIterator temp = begin;
-    ++begin;
-    delete temp->second;
-  }
-}
-
 // Counts the number of instances of val in a container.
 template <typename Container, typename T>
 typename std::iterator_traits<
@@ -99,7 +67,13 @@ template <class T>
 void STLDeleteElements(T* container) {
   if (!container)
     return;
-  STLDeleteContainerPointers(container->begin(), container->end());
+
+  for (auto it = container->begin(); it != container->end();) {
+    auto temp = it;
+    ++it;
+    delete *temp;
+  }
+
   container->clear();
 }
 
@@ -110,7 +84,13 @@ template <class T>
 void STLDeleteValues(T* container) {
   if (!container)
     return;
-  STLDeleteContainerPairSecondPointers(container->begin(), container->end());
+
+  for (auto it = container->begin(); it != container->end();) {
+    auto temp = it;
+    ++it;
+    delete temp->second;
+  }
+
   container->clear();
 }
 
