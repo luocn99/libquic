@@ -7,14 +7,9 @@
 #include <limits>
 #include <utility>
 
-#include "base/logging.h"
-#include "base/stl_util.h"
-#include "net/base/linked_hash_map.h"
 #include "net/quic/core/crypto/crypto_protocol.h"
-#include "net/quic/core/quic_bug_tracker.h"
 #include "net/quic/core/quic_connection_stats.h"
-#include "net/quic/core/quic_flags.h"
-
+#include "net/quic/platform/api/quic_bug_tracker.h"
 
 namespace net {
 
@@ -31,6 +26,7 @@ const size_t kMaxPacketsAfterNewMissing = 4;
 QuicReceivedPacketManager::QuicReceivedPacketManager(QuicConnectionStats* stats)
     : peer_least_packet_awaiting_ack_(0),
       ack_frame_updated_(false),
+      max_ack_ranges_(0),
       time_largest_observed_(QuicTime::Zero()),
       stats_(stats) {
   ack_frame_.largest_observed = 0;
@@ -76,22 +72,9 @@ bool QuicReceivedPacketManager::IsMissing(QuicPacketNumber packet_number) {
 
 bool QuicReceivedPacketManager::IsAwaitingPacket(
     QuicPacketNumber packet_number) {
-  return ::net::IsAwaitingPacket(ack_frame_, packet_number,
-                                 peer_least_packet_awaiting_ack_);
+  return net::IsAwaitingPacket(ack_frame_, packet_number,
+                               peer_least_packet_awaiting_ack_);
 }
-
-namespace {
-struct isTooLarge {
-  explicit isTooLarge(QuicPacketNumber n) : largest_observed_(n) {}
-  QuicPacketNumber largest_observed_;
-
-  // Return true if the packet in p is too different from largest_observed_
-  // to express.
-  bool operator()(const std::pair<QuicPacketNumber, QuicTime>& p) const {
-    return largest_observed_ - p.first >= std::numeric_limits<uint8_t>::max();
-  }
-};
-}  // namespace
 
 const QuicFrame QuicReceivedPacketManager::GetUpdatedAckFrame(
     QuicTime approximate_now) {
@@ -104,6 +87,10 @@ const QuicFrame QuicReceivedPacketManager::GetUpdatedAckFrame(
     ack_frame_.ack_delay_time = approximate_now < time_largest_observed_
                                     ? QuicTime::Delta::Zero()
                                     : approximate_now - time_largest_observed_;
+  }
+  while (max_ack_ranges_ > 0 &&
+         ack_frame_.packets.NumIntervals() > max_ack_ranges_) {
+    ack_frame_.packets.RemoveSmallestInterval();
   }
 
   // Clear all packet times if any are too far from largest observed.
@@ -121,18 +108,13 @@ const QuicFrame QuicReceivedPacketManager::GetUpdatedAckFrame(
   return QuicFrame(&ack_frame_);
 }
 
-bool QuicReceivedPacketManager::DontWaitForPacketsBefore(
+void QuicReceivedPacketManager::DontWaitForPacketsBefore(
     QuicPacketNumber least_unacked) {
-  peer_least_packet_awaiting_ack_ = least_unacked;
-  return ack_frame_.packets.RemoveUpTo(least_unacked);
-}
-
-void QuicReceivedPacketManager::UpdatePacketInformationSentByPeer(
-    const QuicStopWaitingFrame& stop_waiting) {
   // ValidateAck() should fail if peer_least_packet_awaiting_ack shrinks.
-  DCHECK_LE(peer_least_packet_awaiting_ack_, stop_waiting.least_unacked);
-  if (stop_waiting.least_unacked > peer_least_packet_awaiting_ack_) {
-    bool packets_updated = DontWaitForPacketsBefore(stop_waiting.least_unacked);
+  DCHECK_LE(peer_least_packet_awaiting_ack_, least_unacked);
+  if (least_unacked > peer_least_packet_awaiting_ack_) {
+    peer_least_packet_awaiting_ack_ = least_unacked;
+    bool packets_updated = ack_frame_.packets.RemoveUpTo(least_unacked);
     if (packets_updated) {
       // Ack frame gets updated because packets set is updated because of stop
       // waiting frame.

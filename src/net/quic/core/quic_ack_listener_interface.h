@@ -5,15 +5,16 @@
 #ifndef NET_QUIC_CORE_QUIC_ACK_LISTENER_INTERFACE_H_
 #define NET_QUIC_CORE_QUIC_ACK_LISTENER_INTERFACE_H_
 
-#include "base/memory/ref_counted.h"
 #include "net/quic/core/quic_time.h"
 #include "net/quic/core/quic_types.h"
+#include "net/quic/platform/api/quic_export.h"
+#include "net/quic/platform/api/quic_reference_counted.h"
 
 namespace net {
 
 // Pure virtual class to listen for packet acknowledgements.
-class NET_EXPORT_PRIVATE QuicAckListenerInterface
-    : public base::RefCounted<QuicAckListenerInterface> {
+class QUIC_EXPORT_PRIVATE QuicAckListenerInterface
+    : public QuicReferenceCounted {
  public:
   QuicAckListenerInterface() {}
 
@@ -27,19 +28,18 @@ class NET_EXPORT_PRIVATE QuicAckListenerInterface
   virtual void OnPacketRetransmitted(int retransmitted_bytes) = 0;
 
  protected:
-  friend class base::RefCounted<QuicAckListenerInterface>;
-
   // Delegates are ref counted.
-  virtual ~QuicAckListenerInterface() {}
+  ~QuicAckListenerInterface() override;
 };
 
-struct NET_EXPORT_PRIVATE AckListenerWrapper {
-  AckListenerWrapper(QuicAckListenerInterface* listener,
-                     QuicPacketLength data_length);
+struct QUIC_EXPORT_PRIVATE AckListenerWrapper {
+  AckListenerWrapper(
+      QuicReferenceCountedPointer<QuicAckListenerInterface> ack_listener,
+      QuicPacketLength data_length);
   AckListenerWrapper(const AckListenerWrapper& other);
   ~AckListenerWrapper();
 
-  scoped_refptr<QuicAckListenerInterface> ack_listener;
+  QuicReferenceCountedPointer<QuicAckListenerInterface> ack_listener;
   QuicPacketLength length;
 };
 

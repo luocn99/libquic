@@ -7,13 +7,13 @@
 
 #include "net/quic/core/frames/quic_frame.h"
 #include "net/quic/core/quic_types.h"
+#include "net/quic/platform/api/quic_export.h"
 
 namespace net {
 
 // Struct to store the pending retransmission information.
-struct NET_EXPORT_PRIVATE QuicPendingRetransmission {
-  QuicPendingRetransmission(QuicPathId path_id,
-                            QuicPacketNumber packet_number,
+struct QUIC_EXPORT_PRIVATE QuicPendingRetransmission {
+  QuicPendingRetransmission(QuicPacketNumber packet_number,
                             TransmissionType transmission_type,
                             const QuicFrames& retransmittable_frames,
                             bool has_crypto_handshake,
@@ -23,7 +23,6 @@ struct NET_EXPORT_PRIVATE QuicPendingRetransmission {
       : packet_number(packet_number),
         retransmittable_frames(retransmittable_frames),
         transmission_type(transmission_type),
-        path_id(path_id),
         has_crypto_handshake(has_crypto_handshake),
         num_padding_bytes(num_padding_bytes),
         encryption_level(encryption_level),
@@ -32,7 +31,6 @@ struct NET_EXPORT_PRIVATE QuicPendingRetransmission {
   QuicPacketNumber packet_number;
   const QuicFrames& retransmittable_frames;
   TransmissionType transmission_type;
-  QuicPathId path_id;
   bool has_crypto_handshake;
   int num_padding_bytes;
   EncryptionLevel encryption_level;

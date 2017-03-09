@@ -6,28 +6,28 @@
 
 #include <cstdint>
 #include <memory>
-#include <vector>
 
 #include "base/compiler_specific.h"
-#include "base/logging.h"
-#include "base/memory/ptr_util.h"
-#include "base/stl_util.h"
 #include "net/quic/core/crypto/crypto_framer.h"
 #include "net/quic/core/crypto/crypto_handshake_message.h"
 #include "net/quic/core/crypto/crypto_protocol.h"
+#include "net/quic/core/crypto/null_decrypter.h"
+#include "net/quic/core/crypto/null_encrypter.h"
 #include "net/quic/core/crypto/quic_decrypter.h"
 #include "net/quic/core/crypto/quic_encrypter.h"
-#include "net/quic/core/quic_bug_tracker.h"
 #include "net/quic/core/quic_data_reader.h"
 #include "net/quic/core/quic_data_writer.h"
 #include "net/quic/core/quic_flags.h"
 #include "net/quic/core/quic_socket_address_coder.h"
 #include "net/quic/core/quic_utils.h"
+#include "net/quic/platform/api/quic_aligned.h"
+#include "net/quic/platform/api/quic_bug_tracker.h"
+#include "net/quic/platform/api/quic_logging.h"
+#include "net/quic/platform/api/quic_map_util.h"
+#include "net/quic/platform/api/quic_ptr_util.h"
 
-using base::ContainsKey;
 using base::StringPiece;
 using std::string;
-#define PREDICT_FALSE(x) (x)
 
 namespace net {
 
@@ -136,8 +136,8 @@ QuicFramer::QuicFramer(const QuicVersionVector& supported_versions,
       error_(QUIC_NO_ERROR),
       last_packet_number_(0),
       largest_packet_number_(0),
-      last_path_id_(kInvalidPathId),
       last_serialized_connection_id_(0),
+      last_version_tag_(0),
       supported_versions_(supported_versions),
       decrypter_level_(ENCRYPTION_NONE),
       alternative_decrypter_level_(ENCRYPTION_NONE),
@@ -148,8 +148,8 @@ QuicFramer::QuicFramer(const QuicVersionVector& supported_versions,
       last_timestamp_(QuicTime::Delta::Zero()) {
   DCHECK(!supported_versions.empty());
   quic_version_ = supported_versions_[0];
-  decrypter_.reset(QuicDecrypter::Create(kNULL));
-  encrypter_[ENCRYPTION_NONE].reset(QuicEncrypter::Create(kNULL));
+  decrypter_ = QuicMakeUnique<NullDecrypter>(perspective);
+  encrypter_[ENCRYPTION_NONE] = QuicMakeUnique<NullEncrypter>(perspective);
 }
 
 QuicFramer::~QuicFramer() {}
@@ -306,8 +306,8 @@ size_t QuicFramer::GetSerializedFrameLength(
   if (can_truncate) {
     // Truncate the frame so the packet will not exceed kMaxPacketSize.
     // Note that we may not use every byte of the writer in this case.
-    DVLOG(1) << ENDPOINT
-             << "Truncating large frame, free bytes: " << free_bytes;
+    QUIC_DLOG(INFO) << ENDPOINT
+                    << "Truncating large frame, free bytes: " << free_bytes;
     return free_bytes;
   }
   return 0;
@@ -424,7 +424,7 @@ std::unique_ptr<QuicEncryptedPacket> QuicFramer::BuildPublicResetPacket(
   CryptoHandshakeMessage reset;
   reset.set_tag(kPRST);
   reset.SetValue(kRNON, packet.nonce_proof);
-  if (!FLAGS_quic_remove_packet_number_from_public_reset) {
+  if (!FLAGS_quic_reloadable_flag_quic_remove_packet_number_from_public_reset) {
     reset.SetValue(kRSEQ, packet.rejected_packet_number);
   }
   if (packet.client_address.host().address_family() !=
@@ -446,7 +446,7 @@ std::unique_ptr<QuicEncryptedPacket> QuicFramer::BuildPublicResetPacket(
 
   uint8_t flags = static_cast<uint8_t>(PACKET_PUBLIC_FLAGS_RST |
                                        PACKET_PUBLIC_FLAGS_8BYTE_CONNECTION_ID);
-  if (FLAGS_quic_use_old_public_reset_packets) {
+  if (FLAGS_quic_reloadable_flag_quic_use_old_public_reset_packets) {
     // TODO(rch): Remove this QUIC_VERSION_32 is retired.
     flags |= static_cast<uint8_t>(PACKET_PUBLIC_FLAGS_8BYTE_CONNECTION_ID_OLD);
   }
@@ -462,7 +462,7 @@ std::unique_ptr<QuicEncryptedPacket> QuicFramer::BuildPublicResetPacket(
     return nullptr;
   }
 
-  return base::MakeUnique<QuicEncryptedPacket>(buffer.release(), len, true);
+  return QuicMakeUnique<QuicEncryptedPacket>(buffer.release(), len, true);
 }
 
 // static
@@ -492,7 +492,7 @@ std::unique_ptr<QuicEncryptedPacket> QuicFramer::BuildVersionNegotiationPacket(
     }
   }
 
-  return base::MakeUnique<QuicEncryptedPacket>(buffer.release(), len, true);
+  return QuicMakeUnique<QuicEncryptedPacket>(buffer.release(), len, true);
 }
 
 bool QuicFramer::ProcessPacket(const QuicEncryptedPacket& packet) {
@@ -504,8 +504,8 @@ bool QuicFramer::ProcessPacket(const QuicEncryptedPacket& packet) {
   QuicPacketPublicHeader public_header;
   if (!ProcessPublicHeader(&reader, &public_header)) {
     DCHECK_NE("", detailed_error_);
-    DVLOG(1) << ENDPOINT
-             << "Unable to process public header. Error: " << detailed_error_;
+    QUIC_DVLOG(1) << ENDPOINT << "Unable to process public header. Error: "
+                  << detailed_error_;
     DCHECK_NE("", detailed_error_);
     return RaiseError(QUIC_INVALID_PACKET_HEADER);
   }
@@ -530,10 +530,7 @@ bool QuicFramer::ProcessPacket(const QuicEncryptedPacket& packet) {
   } else if (packet.length() <= kMaxPacketSize) {
     // The optimized decryption algorithm implementations run faster when
     // operating on aligned memory.
-    //
-    // TODO(rtenneti): Change the default 64 alignas value (used the default
-    // value from CACHELINE_SIZE).
-    ALIGNAS(64) char buffer[kMaxPacketSize];
+    QUIC_CACHELINE_ALIGNED char buffer[kMaxPacketSize];
     rv = ProcessDataPacket(&reader, public_header, packet, buffer,
                            kMaxPacketSize);
   } else {
@@ -573,9 +570,10 @@ bool QuicFramer::ProcessDataPacket(QuicDataReader* encrypted_reader,
   QuicPacketHeader header(public_header);
   if (!ProcessUnauthenticatedHeader(encrypted_reader, &header)) {
     DCHECK_NE("", detailed_error_);
-    DVLOG(1) << ENDPOINT
-             << "Unable to process packet header. Stopping parsing. Error: "
-             << detailed_error_;
+    QUIC_DVLOG(1)
+        << ENDPOINT
+        << "Unable to process packet header. Stopping parsing. Error: "
+        << detailed_error_;
     return false;
   }
 
@@ -607,8 +605,8 @@ bool QuicFramer::ProcessDataPacket(QuicDataReader* encrypted_reader,
   if (!ProcessFrameData(&reader, header)) {
     DCHECK_NE(QUIC_NO_ERROR, error_);  // ProcessFrameData sets the error.
     DCHECK_NE("", detailed_error_);
-    DLOG(WARNING) << ENDPOINT
-                  << "Unable to process frame data. Error: " << detailed_error_;
+    QUIC_DLOG(WARNING) << ENDPOINT << "Unable to process frame data. Error: "
+                       << detailed_error_;
     return false;
   }
 
@@ -653,7 +651,7 @@ bool QuicFramer::ProcessPublicResetPacket(
 
 bool QuicFramer::AppendPacketHeader(const QuicPacketHeader& header,
                                     QuicDataWriter* writer) {
-  DVLOG(1) << ENDPOINT << "Appending header: " << header;
+  QUIC_DVLOG(1) << ENDPOINT << "Appending header: " << header;
   uint8_t public_flags = 0;
   if (header.public_header.reset_flag) {
     public_flags |= PACKET_PUBLIC_FLAGS_RST;
@@ -683,7 +681,7 @@ bool QuicFramer::AppendPacketHeader(const QuicPacketHeader& header,
       break;
     case PACKET_8BYTE_CONNECTION_ID:
       public_flags |= PACKET_PUBLIC_FLAGS_8BYTE_CONNECTION_ID;
-      if (!FLAGS_quic_remove_v33_hacks2 &&
+      if (!FLAGS_quic_reloadable_flag_quic_remove_v33_hacks2 &&
           perspective_ == Perspective::IS_CLIENT) {
         public_flags |= PACKET_PUBLIC_FLAGS_8BYTE_CONNECTION_ID_OLD;
       }
@@ -698,14 +696,11 @@ bool QuicFramer::AppendPacketHeader(const QuicPacketHeader& header,
   if (header.public_header.version_flag) {
     DCHECK_EQ(Perspective::IS_CLIENT, perspective_);
     QuicTag tag = QuicVersionToQuicTag(quic_version_);
-    writer->WriteUInt32(tag);
-    DVLOG(1) << ENDPOINT << "version = " << quic_version_ << ", tag = '"
-             << QuicTagToString(tag) << "'";
-  }
-
-  if (header.public_header.multipath_flag &&
-      !writer->WriteUInt8(header.path_id)) {
-    return false;
+    if (!writer->WriteUInt32(tag)) {
+      return false;
+    }
+    QUIC_DVLOG(1) << ENDPOINT << "version = " << quic_version_ << ", tag = '"
+                  << QuicTagToString(tag) << "'";
   }
 
   if (header.public_header.nonce != nullptr &&
@@ -745,44 +740,10 @@ const QuicTime::Delta QuicFramer::CalculateTimestampFromWire(
   return QuicTime::Delta::FromMicroseconds(time);
 }
 
-bool QuicFramer::IsValidPath(QuicPathId path_id,
-                             QuicPacketNumber* base_packet_number) {
-  if (ContainsKey(closed_paths_, path_id)) {
-    // Path is closed.
-    return false;
-  }
-
-  if (path_id == last_path_id_) {
-    *base_packet_number = largest_packet_number_;
-    return true;
-  }
-
-  if (ContainsKey(largest_packet_numbers_, path_id)) {
-    *base_packet_number = largest_packet_numbers_[path_id];
-  } else {
-    *base_packet_number = 0;
-  }
-
-  return true;
-}
-
 void QuicFramer::SetLastPacketNumber(const QuicPacketHeader& header) {
-  if (header.public_header.multipath_flag && header.path_id != last_path_id_) {
-    if (last_path_id_ != kInvalidPathId) {
-      // Save current last packet number before changing path.
-      largest_packet_numbers_[last_path_id_] = largest_packet_number_;
-    }
-    // Change path.
-    last_path_id_ = header.path_id;
-  }
   last_packet_number_ = header.packet_number;
   largest_packet_number_ =
       std::max(header.packet_number, largest_packet_number_);
-}
-
-void QuicFramer::OnPathClosed(QuicPathId path_id) {
-  closed_paths_.insert(path_id);
-  largest_packet_numbers_.erase(path_id);
 }
 
 QuicPacketNumber QuicFramer::CalculatePacketNumberFromWire(
@@ -958,20 +919,7 @@ QuicFramer::AckFrameInfo QuicFramer::GetAckFrameInfo(
 
 bool QuicFramer::ProcessUnauthenticatedHeader(QuicDataReader* encrypted_reader,
                                               QuicPacketHeader* header) {
-  header->path_id = kDefaultPathId;
-  if (header->public_header.multipath_flag &&
-      !ProcessPathId(encrypted_reader, &header->path_id)) {
-    set_detailed_error("Unable to read path id.");
-    return RaiseError(QUIC_INVALID_PACKET_HEADER);
-  }
-
   QuicPacketNumber base_packet_number = largest_packet_number_;
-  if (header->public_header.multipath_flag &&
-      !IsValidPath(header->path_id, &base_packet_number)) {
-    // Stop processing because path is closed.
-    set_detailed_error("Path is closed.");
-    return false;
-  }
 
   if (!ProcessPacketSequenceNumber(
           encrypted_reader, header->public_header.packet_number_length,
@@ -990,14 +938,6 @@ bool QuicFramer::ProcessUnauthenticatedHeader(QuicDataReader* encrypted_reader,
         "Visitor asked to stop processing of unauthenticated header.");
     return false;
   }
-  return true;
-}
-
-bool QuicFramer::ProcessPathId(QuicDataReader* reader, QuicPathId* path_id) {
-  if (!reader->ReadBytes(path_id, 1)) {
-    return false;
-  }
-
   return true;
 }
 
@@ -1039,7 +979,8 @@ bool QuicFramer::ProcessFrameData(QuicDataReader* reader,
           return RaiseError(QUIC_INVALID_STREAM_DATA);
         }
         if (!visitor_->OnStreamFrame(frame)) {
-          DVLOG(1) << ENDPOINT << "Visitor asked to stop further processing.";
+          QUIC_DVLOG(1) << ENDPOINT
+                        << "Visitor asked to stop further processing.";
           // Returning true since there was no parsing error.
           return true;
         }
@@ -1053,7 +994,8 @@ bool QuicFramer::ProcessFrameData(QuicDataReader* reader,
           return RaiseError(QUIC_INVALID_ACK_DATA);
         }
         if (!visitor_->OnAckFrame(frame)) {
-          DVLOG(1) << ENDPOINT << "Visitor asked to stop further processing.";
+          QUIC_DVLOG(1) << ENDPOINT
+                        << "Visitor asked to stop further processing.";
           // Returning true since there was no parsing error.
           return true;
         }
@@ -1063,8 +1005,8 @@ bool QuicFramer::ProcessFrameData(QuicDataReader* reader,
       // This was a special frame type that did not match any
       // of the known ones. Error.
       set_detailed_error("Illegal frame type.");
-      DLOG(WARNING) << ENDPOINT
-                    << "Illegal frame type: " << static_cast<int>(frame_type);
+      QUIC_DLOG(WARNING) << ENDPOINT << "Illegal frame type: "
+                         << static_cast<int>(frame_type);
       return RaiseError(QUIC_INVALID_FRAME_DATA);
     }
 
@@ -1072,7 +1014,7 @@ bool QuicFramer::ProcessFrameData(QuicDataReader* reader,
       case PADDING_FRAME: {
         QuicPaddingFrame frame(reader->BytesRemaining());
         if (!visitor_->OnPaddingFrame(frame)) {
-          DVLOG(1) << "Visitor asked to stop further processing.";
+          QUIC_DVLOG(1) << "Visitor asked to stop further processing.";
         }
         // We're done with the packet.
         return true;
@@ -1084,7 +1026,7 @@ bool QuicFramer::ProcessFrameData(QuicDataReader* reader,
           return RaiseError(QUIC_INVALID_RST_STREAM_DATA);
         }
         if (!visitor_->OnRstStreamFrame(frame)) {
-          DVLOG(1) << "Visitor asked to stop further processing.";
+          QUIC_DVLOG(1) << "Visitor asked to stop further processing.";
           // Returning true since there was no parsing error.
           return true;
         }
@@ -1098,7 +1040,8 @@ bool QuicFramer::ProcessFrameData(QuicDataReader* reader,
         }
 
         if (!visitor_->OnConnectionCloseFrame(frame)) {
-          DVLOG(1) << ENDPOINT << "Visitor asked to stop further processing.";
+          QUIC_DVLOG(1) << ENDPOINT
+                        << "Visitor asked to stop further processing.";
           // Returning true since there was no parsing error.
           return true;
         }
@@ -1111,7 +1054,8 @@ bool QuicFramer::ProcessFrameData(QuicDataReader* reader,
           return RaiseError(QUIC_INVALID_GOAWAY_DATA);
         }
         if (!visitor_->OnGoAwayFrame(goaway_frame)) {
-          DVLOG(1) << ENDPOINT << "Visitor asked to stop further processing.";
+          QUIC_DVLOG(1) << ENDPOINT
+                        << "Visitor asked to stop further processing.";
           // Returning true since there was no parsing error.
           return true;
         }
@@ -1124,7 +1068,8 @@ bool QuicFramer::ProcessFrameData(QuicDataReader* reader,
           return RaiseError(QUIC_INVALID_WINDOW_UPDATE_DATA);
         }
         if (!visitor_->OnWindowUpdateFrame(window_update_frame)) {
-          DVLOG(1) << ENDPOINT << "Visitor asked to stop further processing.";
+          QUIC_DVLOG(1) << ENDPOINT
+                        << "Visitor asked to stop further processing.";
           // Returning true since there was no parsing error.
           return true;
         }
@@ -1137,7 +1082,8 @@ bool QuicFramer::ProcessFrameData(QuicDataReader* reader,
           return RaiseError(QUIC_INVALID_BLOCKED_DATA);
         }
         if (!visitor_->OnBlockedFrame(blocked_frame)) {
-          DVLOG(1) << ENDPOINT << "Visitor asked to stop further processing.";
+          QUIC_DVLOG(1) << ENDPOINT
+                        << "Visitor asked to stop further processing.";
           // Returning true since there was no parsing error.
           return true;
         }
@@ -1150,7 +1096,8 @@ bool QuicFramer::ProcessFrameData(QuicDataReader* reader,
           return RaiseError(QUIC_INVALID_STOP_WAITING_DATA);
         }
         if (!visitor_->OnStopWaitingFrame(stop_waiting_frame)) {
-          DVLOG(1) << ENDPOINT << "Visitor asked to stop further processing.";
+          QUIC_DVLOG(1) << ENDPOINT
+                        << "Visitor asked to stop further processing.";
           // Returning true since there was no parsing error.
           return true;
         }
@@ -1160,7 +1107,8 @@ bool QuicFramer::ProcessFrameData(QuicDataReader* reader,
         // Ping has no payload.
         QuicPingFrame ping_frame;
         if (!visitor_->OnPingFrame(ping_frame)) {
-          DVLOG(1) << ENDPOINT << "Visitor asked to stop further processing.";
+          QUIC_DVLOG(1) << ENDPOINT
+                        << "Visitor asked to stop further processing.";
           // Returning true since there was no parsing error.
           return true;
         }
@@ -1172,7 +1120,8 @@ bool QuicFramer::ProcessFrameData(QuicDataReader* reader,
           return RaiseError(QUIC_INVALID_PATH_CLOSE_DATA);
         }
         if (!visitor_->OnPathCloseFrame(path_close_frame)) {
-          DVLOG(1) << ENDPOINT << "Visitor asked to stop further processing.";
+          QUIC_DVLOG(1) << ENDPOINT
+                        << "Visitor asked to stop further processing.";
           // Returning true since there was no parsing error.
           return true;
         }
@@ -1181,8 +1130,8 @@ bool QuicFramer::ProcessFrameData(QuicDataReader* reader,
 
       default:
         set_detailed_error("Illegal frame type.");
-        DLOG(WARNING) << ENDPOINT
-                      << "Illegal frame type: " << static_cast<int>(frame_type);
+        QUIC_DLOG(WARNING) << ENDPOINT << "Illegal frame type: "
+                           << static_cast<int>(frame_type);
         return RaiseError(QUIC_INVALID_FRAME_DATA);
     }
   }
@@ -1517,15 +1466,13 @@ StringPiece QuicFramer::GetAssociatedDataFromEncryptedPacket(
     const QuicEncryptedPacket& encrypted,
     QuicConnectionIdLength connection_id_length,
     bool includes_version,
-    bool includes_path_id,
     bool includes_diversification_nonce,
     QuicPacketNumberLength packet_number_length) {
   // TODO(ianswett): This is identical to QuicData::AssociatedData.
-  return StringPiece(
-      encrypted.data(),
-      GetStartOfEncryptedData(version, connection_id_length, includes_version,
-                              includes_path_id, includes_diversification_nonce,
-                              packet_number_length));
+  return StringPiece(encrypted.data(),
+                     GetStartOfEncryptedData(
+                         version, connection_id_length, includes_version,
+                         includes_diversification_nonce, packet_number_length));
 }
 
 void QuicFramer::SetDecrypter(EncryptionLevel level, QuicDecrypter* decrypter) {
@@ -1558,7 +1505,6 @@ void QuicFramer::SetEncrypter(EncryptionLevel level, QuicEncrypter* encrypter) {
 }
 
 size_t QuicFramer::EncryptInPlace(EncryptionLevel level,
-                                  QuicPathId path_id,
                                   QuicPacketNumber packet_number,
                                   size_t ad_len,
                                   size_t total_len,
@@ -1566,7 +1512,7 @@ size_t QuicFramer::EncryptInPlace(EncryptionLevel level,
                                   char* buffer) {
   size_t output_length = 0;
   if (!encrypter_[level]->EncryptPacket(
-          path_id, packet_number,
+          quic_version_, packet_number,
           StringPiece(buffer, ad_len),                       // Associated data
           StringPiece(buffer + ad_len, total_len - ad_len),  // Plaintext
           buffer + ad_len,  // Destination buffer
@@ -1579,7 +1525,6 @@ size_t QuicFramer::EncryptInPlace(EncryptionLevel level,
 }
 
 size_t QuicFramer::EncryptPayload(EncryptionLevel level,
-                                  QuicPathId path_id,
                                   QuicPacketNumber packet_number,
                                   const QuicPacket& packet,
                                   char* buffer,
@@ -1593,10 +1538,10 @@ size_t QuicFramer::EncryptPayload(EncryptionLevel level,
   memmove(buffer, associated_data.data(), ad_len);
   // Encrypt the plaintext into the buffer.
   size_t output_length = 0;
-  if (!encrypter_[level]->EncryptPacket(path_id, packet_number, associated_data,
-                                        packet.Plaintext(quic_version_),
-                                        buffer + ad_len, &output_length,
-                                        buffer_len - ad_len)) {
+  if (!encrypter_[level]->EncryptPacket(
+          quic_version_, packet_number, associated_data,
+          packet.Plaintext(quic_version_), buffer + ad_len, &output_length,
+          buffer_len - ad_len)) {
     RaiseError(QUIC_ENCRYPTION_FAILURE);
     return 0;
   }
@@ -1631,12 +1576,11 @@ bool QuicFramer::DecryptPayload(QuicDataReader* encrypted_reader,
   DCHECK(decrypter_.get() != nullptr);
   StringPiece associated_data = GetAssociatedDataFromEncryptedPacket(
       quic_version_, packet, header.public_header.connection_id_length,
-      header.public_header.version_flag, header.public_header.multipath_flag,
-      header.public_header.nonce != nullptr,
+      header.public_header.version_flag, header.public_header.nonce != nullptr,
       header.public_header.packet_number_length);
 
   bool success = decrypter_->DecryptPacket(
-      header.path_id, header.packet_number, associated_data, encrypted,
+      quic_version_, header.packet_number, associated_data, encrypted,
       decrypted_buffer, decrypted_length, buffer_length);
   if (success) {
     visitor_->OnDecryptedPacket(decrypter_level_);
@@ -1660,7 +1604,7 @@ bool QuicFramer::DecryptPayload(QuicDataReader* encrypted_reader,
 
     if (try_alternative_decryption) {
       success = alternative_decrypter_->DecryptPacket(
-          header.path_id, header.packet_number, associated_data, encrypted,
+          quic_version_, header.packet_number, associated_data, encrypted,
           decrypted_buffer, decrypted_length, buffer_length);
     }
     if (success) {
@@ -1682,8 +1626,8 @@ bool QuicFramer::DecryptPayload(QuicDataReader* encrypted_reader,
   }
 
   if (!success) {
-    DVLOG(1) << ENDPOINT << "DecryptPacket failed for packet_number:"
-             << header.packet_number;
+    QUIC_DVLOG(1) << ENDPOINT << "DecryptPacket failed for packet_number:"
+                  << header.packet_number;
     return false;
   }
 
@@ -1978,7 +1922,7 @@ bool QuicFramer::AppendAckFrameAndTypeByte(const QuicAckFrame& frame,
       const size_t num_encoded_gaps =
           (total_gap + std::numeric_limits<uint8_t>::max() - 1) /
           std::numeric_limits<uint8_t>::max();
-      DCHECK_GT(num_encoded_gaps, 0u);
+      DCHECK_LE(0u, num_encoded_gaps);
 
       // Append empty ACK blocks because the gap is longer than a single gap.
       for (size_t i = 1;
@@ -1991,7 +1935,7 @@ bool QuicFramer::AppendAckFrameAndTypeByte(const QuicAckFrame& frame,
         ++num_ack_blocks_written;
       }
       if (num_ack_blocks_written >= num_ack_blocks) {
-        if (PREDICT_FALSE(num_ack_blocks_written != num_ack_blocks)) {
+        if (QUIC_PREDICT_FALSE(num_ack_blocks_written != num_ack_blocks)) {
           QUIC_BUG << "Wrote " << num_ack_blocks_written
                    << ", expected to write " << num_ack_blocks;
         }
@@ -2200,8 +2144,8 @@ bool QuicFramer::AppendPathCloseFrame(const QuicPathCloseFrame& frame,
 }
 
 bool QuicFramer::RaiseError(QuicErrorCode error) {
-  DVLOG(1) << ENDPOINT << "Error: " << QuicErrorCodeToString(error)
-           << " detail: " << detailed_error_;
+  QUIC_DLOG(INFO) << ENDPOINT << "Error: " << QuicErrorCodeToString(error)
+                  << " detail: " << detailed_error_;
   set_error(error);
   visitor_->OnError(this);
   return false;

@@ -2,21 +2,21 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef NET_QUIC_QUIC_CRYPTO_SERVER_STREAM_H_
-#define NET_QUIC_QUIC_CRYPTO_SERVER_STREAM_H_
+#ifndef NET_QUIC_CORE_QUIC_CRYPTO_SERVER_STREAM_H_
+#define NET_QUIC_CORE_QUIC_CRYPTO_SERVER_STREAM_H_
 
 #include <cstdint>
 #include <memory>
 #include <string>
 
 #include "base/macros.h"
-#include "net/base/net_export.h"
 #include "net/quic/core/crypto/crypto_handshake.h"
 #include "net/quic/core/crypto/quic_compressed_certs_cache.h"
 #include "net/quic/core/crypto/quic_crypto_server_config.h"
 #include "net/quic/core/proto/source_address_token.pb.h"
 #include "net/quic/core/quic_config.h"
 #include "net/quic/core/quic_crypto_stream.h"
+#include "net/quic/platform/api/quic_export.h"
 
 namespace net {
 
@@ -26,13 +26,12 @@ class QuicCryptoServerConfig;
 class QuicCryptoServerStreamBase;
 
 namespace test {
-class CryptoTestUtils;
 class QuicCryptoServerStreamPeer;
 }  // namespace test
 
 // TODO(alyssar) see what can be moved out of QuicCryptoServerStream with
 // various code and test refactoring.
-class NET_EXPORT_PRIVATE QuicCryptoServerStreamBase : public QuicCryptoStream {
+class QUIC_EXPORT_PRIVATE QuicCryptoServerStreamBase : public QuicCryptoStream {
  public:
   explicit QuicCryptoServerStreamBase(QuicSession* session);
 
@@ -70,7 +69,7 @@ class NET_EXPORT_PRIVATE QuicCryptoServerStreamBase : public QuicCryptoStream {
       const CryptoHandshakeMessage& message);
 };
 
-class NET_EXPORT_PRIVATE QuicCryptoServerStream
+class QUIC_EXPORT_PRIVATE QuicCryptoServerStream
     : public QuicCryptoServerStreamBase {
  public:
   class Helper {
@@ -129,7 +128,8 @@ class NET_EXPORT_PRIVATE QuicCryptoServerStream
 
  protected:
   virtual void ProcessClientHello(
-      scoped_refptr<ValidateClientHelloResultCallback::Result> result,
+      QuicReferenceCountedPointer<ValidateClientHelloResultCallback::Result>
+          result,
       std::unique_ptr<ProofSource::Details> proof_source_details,
       std::unique_ptr<ProcessClientHelloResultCallback> done_cb);
 
@@ -138,7 +138,6 @@ class NET_EXPORT_PRIVATE QuicCryptoServerStream
   virtual void OverrideQuicConfigDefaults(QuicConfig* config);
 
  private:
-  friend class test::CryptoTestUtils;
   friend class test::QuicCryptoServerStreamPeer;
 
   class ValidateCallback : public ValidateClientHelloResultCallback {
@@ -148,7 +147,7 @@ class NET_EXPORT_PRIVATE QuicCryptoServerStream
     void Cancel();
 
     // From ValidateClientHelloResultCallback
-    void Run(scoped_refptr<Result> result,
+    void Run(QuicReferenceCountedPointer<Result> result,
              std::unique_ptr<ProofSource::Details> details) override;
 
    private:
@@ -179,7 +178,8 @@ class NET_EXPORT_PRIVATE QuicCryptoServerStream
   // the client hello is complete.  Finishes processing of the client
   // hello message and handles handshake success/failure.
   void FinishProcessingHandshakeMessage(
-      scoped_refptr<ValidateClientHelloResultCallback::Result> result,
+      QuicReferenceCountedPointer<ValidateClientHelloResultCallback::Result>
+          result,
       std::unique_ptr<ProofSource::Details> details);
 
   class ProcessClientHelloCallback;
@@ -215,7 +215,7 @@ class NET_EXPORT_PRIVATE QuicCryptoServerStream
 
   // Server's certificate chain and signature of the server config, as provided
   // by ProofSource::GetProof.
-  scoped_refptr<QuicSignedServerConfig> signed_config_;
+  QuicReferenceCountedPointer<QuicSignedServerConfig> signed_config_;
 
   // Hash of the last received CHLO message which can be used for generating
   // server config update messages.
@@ -279,4 +279,4 @@ class NET_EXPORT_PRIVATE QuicCryptoServerStream
 
 }  // namespace net
 
-#endif  // NET_QUIC_QUIC_CRYPTO_SERVER_STREAM_H_
+#endif  // NET_QUIC_CORE_QUIC_CRYPTO_SERVER_STREAM_H_

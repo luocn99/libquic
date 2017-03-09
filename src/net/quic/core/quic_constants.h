@@ -2,15 +2,17 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef NET_QUIC_QUIC_CONSTANTS_H_
-#define NET_QUIC_QUIC_CONSTANTS_H_
+#ifndef NET_QUIC_CORE_QUIC_CONSTANTS_H_
+#define NET_QUIC_CORE_QUIC_CONSTANTS_H_
 
 #include <stddef.h>
+
 #include <cstdint>
 #include <limits>
 
 #include "base/macros.h"
 #include "net/quic/core/quic_types.h"
+#include "net/quic/platform/api/quic_export.h"
 
 // Definitions of constant values used throughout the QUIC code.
 
@@ -25,6 +27,7 @@ const uint64_t kNumMicrosPerSecond = 1000 * 1000;
 
 // Default initial maximum size in bytes of a QUIC packet.
 const QuicByteCount kDefaultMaxPacketSize = 1350;
+// Default initial maximum size in bytes of a QUIC packet for servers.
 const QuicByteCount kDefaultServerMaxPacketSize = 1000;
 // The maximum packet size of any QUIC packet, based on ethernet's max size,
 // minus the IP and UDP headers. IPv6 has a 40 byte header, UDP adds an
@@ -93,7 +96,7 @@ const QuicStreamId kHeadersStreamId = 3;
 
 // Header key used to identify final offset on data stream when sending HTTP/2
 // trailing headers over QUIC.
-NET_EXPORT_PRIVATE extern const char* const kFinalOffsetHeaderKey;
+QUIC_EXPORT_PRIVATE extern const char* const kFinalOffsetHeaderKey;
 
 // Maximum delayed ack time, in ms.
 const int64_t kMaxDelayedAckTimeMs = 25;
@@ -102,17 +105,13 @@ const int64_t kMaxDelayedAckTimeMs = 25;
 static const int64_t kMinTailLossProbeTimeoutMs = 10;
 
 // The timeout before the handshake succeeds.
-//const int64_t kInitialIdleTimeoutSecs = 5;
-//lancelot test
-const int64_t kInitialIdleTimeoutSecs = 600;
+const int64_t kInitialIdleTimeoutSecs = 5;
 // The default idle timeout.
 const int64_t kDefaultIdleTimeoutSecs = 30;
 // The maximum idle timeout that can be negotiated.
 const int64_t kMaximumIdleTimeoutSecs = 60 * 10;  // 10 minutes.
 // The default timeout for a connection until the crypto handshake succeeds.
-//const int64_t kMaxTimeForCryptoHandshakeSecs = 10;  // 10 secs.
-//lancelot test
-const int64_t kMaxTimeForCryptoHandshakeSecs = 600;  // 10 secs.
+const int64_t kMaxTimeForCryptoHandshakeSecs = 10;  // 10 secs.
 
 // Default limit on the number of undecryptable packets the connection buffers
 // before the CHLO/SHLO arrive.
@@ -188,4 +187,4 @@ const QuicPacketNumber kMaxPacketGap = 5000;
 
 }  // namespace net
 
-#endif  // NET_QUIC_QUIC_CONSTANTS_H_
+#endif  // NET_QUIC_CORE_QUIC_CONSTANTS_H_

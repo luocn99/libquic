@@ -60,7 +60,6 @@ include_directories(src src/third_party/modp_b64 boringssl/include src/third_par
 set(
 	NET_SOURCES
 
-	src/net/quic/core/quic_protocol.cc
 	src/net/quic/core/quic_packet_generator.cc
 	src/net/quic/core/quic_flow_controller.cc
 	src/net/quic/core/quic_connection_stats.cc
@@ -69,7 +68,6 @@ set(
 	src/net/quic/core/quic_session.cc
 	src/net/quic/core/quic_spdy_session.cc
 	src/net/quic/core/quic_spdy_stream.cc
-	src/net/quic/core/iovector.cc
 	src/net/quic/core/quic_stream_sequencer.cc
 	src/net/quic/core/quic_framer.cc
 	src/net/quic/core/quic_sent_packet_manager.cc
@@ -107,16 +105,12 @@ set(
 	src/net/quic/core/crypto/crypto_framer.cc
 	src/net/quic/core/crypto/crypto_handshake.cc
 	src/net/quic/core/crypto/channel_id.cc
-	src/net/quic/core/crypto/strike_register.cc
 	src/net/quic/core/crypto/crypto_utils.cc
-	src/net/quic/core/crypto/local_strike_register_client.cc
 	src/net/quic/core/crypto/quic_encrypter.cc
 	src/net/quic/core/crypto/quic_crypto_client_config.cc
 	src/net/quic/core/crypto/proof_source.cc
 	src/net/quic/core/quic_buffered_packet_store.cc
-	src/net/quic/core/quic_clock.cc
 	src/net/quic/core/quic_alarm.cc
-	src/net/quic/core/quic_sent_entropy_manager.cc
 	src/net/quic/core/quic_multipath_sent_packet_manager.cc
 	src/net/quic/core/congestion_control/pacing_sender.cc
 	src/net/quic/core/congestion_control/general_loss_algorithm.cc
@@ -132,7 +126,6 @@ set(
 	src/net/quic/core/quic_config.cc
 	src/net/quic/core/quic_crypto_server_stream.cc
 	src/net/quic/core/quic_flags.cc
-	src/net/quic/core/reliable_quic_stream.cc
 	src/net/quic/core/quic_bandwidth.cc
 	src/net/quic/core/quic_unacked_packet_map.cc
 	src/net/quic/core/quic_packet_creator.cc
@@ -298,7 +291,6 @@ set(
 	src/base/threading/thread_local_storage.cc
 	src/base/threading/thread_collision_warner.cc
 	src/base/threading/thread_checker_impl.cc
-	src/base/threading/thread_local_posix.cc
 	src/base/time/time_posix.cc
 	src/base/time/time.cc
 	src/base/synchronization/lock.cc
@@ -439,9 +431,6 @@ if(Protobuf_FOUND AND FALSE)  # Turn off protobuf. Use bundled protobuf instead
 else()
 	set(
 		PROTO_RESULTS
-
-		src/net/quic/core/proto/cached_network_parameters.pb.cc
-		src/net/quic/core/proto/source_address_token.pb.cc
 	)
 
 	# message("Cannot find protobuf")
@@ -481,11 +470,11 @@ add_library(
 )
 target_link_libraries(quic ${BASE_ARCH_LIBRARIES} ssl crypto protobuf)
 
-add_executable(
-	test_quic_reverse_proxy
+#add_executable(
+#	test_quic_reverse_proxy
 
-	custom/reverse_proxy.cc
-)
+#	custom/reverse_proxy.cc
+#)
 
 # XXX(serialx): Not sure if this is safe, since our CFLAGS contaminate boringssl build
 add_subdirectory(boringssl)

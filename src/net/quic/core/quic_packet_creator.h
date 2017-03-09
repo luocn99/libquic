@@ -7,11 +7,10 @@
 // packets on one path at the same time. Currently, next packet number is
 // tracked per-path.
 
-#ifndef NET_QUIC_QUIC_PACKET_CREATOR_H_
-#define NET_QUIC_QUIC_PACKET_CREATOR_H_
+#ifndef NET_QUIC_CORE_QUIC_PACKET_CREATOR_H_
+#define NET_QUIC_CORE_QUIC_PACKET_CREATOR_H_
 
-#include <stddef.h>
-
+#include <cstddef>
 #include <memory>
 #include <string>
 #include <unordered_map>
@@ -20,22 +19,22 @@
 
 #include "base/macros.h"
 #include "base/strings/string_piece.h"
-#include "net/base/net_export.h"
 #include "net/quic/core/quic_connection_close_delegate_interface.h"
 #include "net/quic/core/quic_framer.h"
 #include "net/quic/core/quic_iovector.h"
 #include "net/quic/core/quic_packets.h"
 #include "net/quic/core/quic_pending_retransmission.h"
+#include "net/quic/platform/api/quic_export.h"
 
 namespace net {
 namespace test {
 class QuicPacketCreatorPeer;
 }
 
-class NET_EXPORT_PRIVATE QuicPacketCreator {
+class QUIC_EXPORT_PRIVATE QuicPacketCreator {
  public:
   // A delegate interface for further processing serialized packet.
-  class NET_EXPORT_PRIVATE DelegateInterface
+  class QUIC_EXPORT_PRIVATE DelegateInterface
       : public QuicConnectionCloseDelegateInterface {
    public:
     ~DelegateInterface() override {}
@@ -48,7 +47,7 @@ class NET_EXPORT_PRIVATE QuicPacketCreator {
   // Interface which gets callbacks from the QuicPacketCreator at interesting
   // points.  Implementations must not mutate the state of the creator
   // as a result of these callbacks.
-  class NET_EXPORT_PRIVATE DebugDelegate {
+  class QUIC_EXPORT_PRIVATE DebugDelegate {
    public:
     virtual ~DebugDelegate() {}
 
@@ -83,7 +82,6 @@ class NET_EXPORT_PRIVATE QuicPacketCreator {
       QuicVersion version,
       QuicConnectionIdLength connection_id_length,
       bool include_version,
-      bool include_path_id,
       bool include_diversification_nonce,
       QuicPacketNumberLength packet_number_length,
       QuicStreamOffset offset);
@@ -119,13 +117,14 @@ class NET_EXPORT_PRIVATE QuicPacketCreator {
   // QuicStreamFrame to the returned SerializedPacket.  Sets
   // |num_bytes_consumed| to the number of bytes consumed to create the
   // QuicStreamFrame.
-  void CreateAndSerializeStreamFrame(QuicStreamId id,
-                                     const QuicIOVector& iov,
-                                     QuicStreamOffset iov_offset,
-                                     QuicStreamOffset stream_offset,
-                                     bool fin,
-                                     QuicAckListenerInterface* listener,
-                                     size_t* num_bytes_consumed);
+  void CreateAndSerializeStreamFrame(
+      QuicStreamId id,
+      const QuicIOVector& iov,
+      QuicStreamOffset iov_offset,
+      QuicStreamOffset stream_offset,
+      bool fin,
+      QuicReferenceCountedPointer<QuicAckListenerInterface> listener,
+      size_t* num_bytes_consumed);
 
   // Returns true if there are frames pending to be serialized.
   bool HasPendingFrames() const;
@@ -159,10 +158,11 @@ class NET_EXPORT_PRIVATE QuicPacketCreator {
   // Identical to AddSavedFrame, but allows the frame to be padded.
   bool AddPaddedSavedFrame(const QuicFrame& frame);
 
-  // Adds |listener| to the next serialized packet and notifies the
-  // std::listener with |length| as the number of acked bytes.
-  void AddAckListener(QuicAckListenerInterface* listener,
-                      QuicPacketLength length);
+  // Adds |listener| to the next serialized packet and notifies the listener
+  // with |length| as the number of acked bytes.
+  void AddAckListener(
+      QuicReferenceCountedPointer<QuicAckListenerInterface> listener,
+      QuicPacketLength length);
 
   // Creates a version negotiation packet which supports |supported_versions|.
   std::unique_ptr<QuicEncryptedPacket> SerializeVersionNegotiationPacket(
@@ -205,16 +205,12 @@ class NET_EXPORT_PRIVATE QuicPacketCreator {
   // Sets the maximum packet length.
   void SetMaxPacketLength(QuicByteCount length);
 
-  // Sets the path on which subsequent packets will be created. It is the
-  // caller's responsibility to guarantee no packet is under construction before
-  // calling this function. If |path_id| is different from current_path_,
-  // next_packet_number_length_ is recalculated.
-  void SetCurrentPath(QuicPathId path_id,
-                      QuicPacketNumber least_packet_awaited_by_peer,
-                      QuicPacketCount max_packets_in_flight);
-
   void set_debug_delegate(DebugDelegate* debug_delegate) {
     debug_delegate_ = debug_delegate;
+  }
+
+  bool latched_flag_no_stop_waiting_frames() const {
+    return latched_flag_no_stop_waiting_frames_;
   }
 
  private:
@@ -280,8 +276,6 @@ class NET_EXPORT_PRIVATE QuicPacketCreator {
 
   // Controls whether version should be included while serializing the packet.
   bool send_version_in_packet_;
-  // Controls whether path id should be included while serializing the packet.
-  bool send_path_id_in_packet_;
   // Staging variable to hold next packet number length. When sequence
   // number length is to be changed, this variable holds the new length until
   // a packet boundary, when the creator's packet_number_length_ can be changed
@@ -309,12 +303,12 @@ class NET_EXPORT_PRIVATE QuicPacketCreator {
   // Packet used to invoke OnSerializedPacket.
   SerializedPacket packet_;
 
-  // Map mapping path_id to last sent packet number on the path.
-  std::unordered_map<QuicPathId, QuicPacketNumber> multipath_packet_number_;
+  // The latched value of FLAGS_quic_reloadable_flag_quic_no_stop_waiting_frames
+  bool latched_flag_no_stop_waiting_frames_;
 
   DISALLOW_COPY_AND_ASSIGN(QuicPacketCreator);
 };
 
 }  // namespace net
 
-#endif  // NET_QUIC_QUIC_PACKET_CREATOR_H_
+#endif  // NET_QUIC_CORE_QUIC_PACKET_CREATOR_H_
