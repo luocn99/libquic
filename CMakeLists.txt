@@ -70,6 +70,17 @@ set(
 	src/net/quic/core/quic_spdy_stream.cc
 	src/net/quic/core/quic_stream_sequencer.cc
 	src/net/quic/core/quic_framer.cc
+	src/net/quic/core/frames/quic_frame.cc
+	src/net/quic/core/frames/quic_stop_waiting_frame.cc
+	src/net/quic/core/frames/quic_stream_frame.cc
+	src/net/quic/core/frames/quic_ack_frame.cc
+	src/net/quic/core/frames/quic_blocked_frame.cc
+	src/net/quic/core/frames/quic_goaway_frame.cc
+	src/net/quic/core/frames/quic_padding_frame.cc
+	src/net/quic/core/frames/quic_rst_stream_frame.cc
+	src/net/quic/core/frames/quic_window_update_frame.cc
+	src/net/quic/core/frames/quic_path_close_frame.cc
+	src/net/quic/core/frames/quic_connection_close_frame.cc
 	src/net/quic/core/quic_sent_packet_manager.cc
 	src/net/quic/core/quic_time.cc
 	src/net/quic/core/quic_headers_stream.cc
@@ -78,7 +89,13 @@ set(
 	src/net/quic/core/quic_received_packet_manager.cc
 	src/net/quic/core/quic_write_blocked_list.cc
 	src/net/quic/core/quic_crypto_stream.cc
+	src/net/quic/core/quic_versions.cc
 	src/net/quic/core/quic_socket_address_coder.cc
+	src/net/quic/platform/impl/quic_socket_address_impl.cc
+	src/net/quic/platform/api/quic_socket_address.cc
+	src/net/quic/platform/api/quic_ip_address.cc
+	src/net/quic/platform/impl/quic_socket_address_impl.cc
+	src/net/quic/platform/impl/quic_ip_address_impl.cc
 	src/net/quic/core/quic_utils.cc
 	src/net/quic/core/quic_header_list.cc
 	src/net/quic/core/spdy_utils.cc
@@ -105,13 +122,14 @@ set(
 	src/net/quic/core/crypto/crypto_framer.cc
 	src/net/quic/core/crypto/crypto_handshake.cc
 	src/net/quic/core/crypto/channel_id.cc
+	src/net/quic/core/crypto/strike_register.cc
 	src/net/quic/core/crypto/crypto_utils.cc
+	src/net/quic/core/crypto/local_strike_register_client.cc
 	src/net/quic/core/crypto/quic_encrypter.cc
 	src/net/quic/core/crypto/quic_crypto_client_config.cc
 	src/net/quic/core/crypto/proof_source.cc
 	src/net/quic/core/quic_buffered_packet_store.cc
 	src/net/quic/core/quic_alarm.cc
-	src/net/quic/core/quic_multipath_sent_packet_manager.cc
 	src/net/quic/core/congestion_control/pacing_sender.cc
 	src/net/quic/core/congestion_control/general_loss_algorithm.cc
 	src/net/quic/core/congestion_control/send_algorithm_interface.cc
@@ -124,6 +142,7 @@ set(
 	src/net/quic/core/congestion_control/tcp_cubic_sender_bytes.cc
 	src/net/quic/core/congestion_control/tcp_cubic_sender_packets.cc
 	src/net/quic/core/quic_config.cc
+	src/net/quic/core/quic_tag.cc
 	src/net/quic/core/quic_crypto_server_stream.cc
 	src/net/quic/core/quic_flags.cc
 	src/net/quic/core/quic_bandwidth.cc
@@ -138,6 +157,8 @@ set(
 	src/net/quic/core/quic_simple_buffer_allocator.cc
 	src/net/quic/core/quic_stream_sequencer_buffer.cc
 	src/net/quic/core/quic_server_session_base.cc
+	src/net/quic/core/quic_packets.cc
+	src/net/quic/core/quic_ack_listener_interface.cc
 
 	src/net/base/int128.cc
 	src/net/base/escape.cc
@@ -150,12 +171,12 @@ set(
 	src/net/base/url_util.cc
 	src/net/base/parse_number.cc
 	src/net/base/arena.cc
+	src/net/base/sockaddr_storage.cc
 
 	src/net/spdy/spdy_frame_reader.cc
 	src/net/spdy/spdy_frame_builder.cc
 	src/net/spdy/spdy_framer.cc
 	src/net/spdy/spdy_header_block.cc
-	src/net/spdy/spdy_headers_block_parser.cc
 	src/net/spdy/spdy_framer_decoder_adapter.cc
 	src/net/spdy/spdy_protocol.cc
 	src/net/spdy/spdy_flags.cc
@@ -190,11 +211,14 @@ if (${CMAKE_SYSTEM_NAME} MATCHES "Linux")
 		src/base/process/process_metrics_posix.cc
 		src/base/process/process_metrics_linux.cc
 		src/base/memory/shared_memory_posix.cc
+		src/base/memory/shared_memory_helper.cc
+		#src/base/process/memory_linux.cc
 		src/base/sys_info_linux.cc
 		src/base/files/file_util.cc
 		src/base/files/file_util_posix.cc
 		src/base/files/file_enumerator.cc
 		src/base/files/file_enumerator_posix.cc
+		src/base/task_runner.cc
 	)
 elseif (${CMAKE_SYSTEM_NAME} MATCHES "Android")
 	set(
@@ -276,6 +300,7 @@ set(
 
 	src/base/logging.cc
 	src/base/posix/safe_strerror.cc
+	src/base/posix/global_descriptors.cc
 	src/base/memory/weak_ptr.cc
 	src/base/memory/singleton.cc
 	src/base/memory/ref_counted.cc
@@ -308,6 +333,7 @@ set(
 	src/base/pickle.cc
 	src/base/debug/alias.cc
 	src/base/debug/stack_trace.cc
+	src/base/debug/stack_trace_posix.cc
 	src/base/debug/debugger.cc
 	src/base/debug/activity_tracker.cc
 	src/base/callback_helpers.cc
@@ -322,13 +348,16 @@ set(
 	src/base/values.cc
 	src/base/at_exit.cc
 	src/base/process/process_posix.cc
+	src/base/process/process_handle.cc
 	src/base/process/process_handle_posix.cc
+	src/base/process/memory.cc
 	src/base/bind_helpers.cc
 	src/base/vlog.cc
 	src/base/location.cc
 	src/base/base64.cc
 	src/base/md5.cc
 	src/base/hash.cc
+	#src/base/feature_list.cc
 	src/base/metrics/statistics_recorder.cc
 	src/base/metrics/sample_map.cc
 	src/base/metrics/sample_vector.cc
@@ -341,7 +370,9 @@ set(
 	src/base/metrics/persistent_memory_allocator.cc
 	src/base/metrics/persistent_sample_map.cc
 	src/base/metrics/persistent_histogram_allocator.cc
-	src/base/rand_util.cc
+	#src/base/metrics/field_trial.cc
+	#src/base/metrics/field_trial_param_associator.cc
+	#src/base/rand_util.cc
 	src/base/files/file_path_constants.cc
 	src/base/files/file_path.cc
 	src/base/files/file.cc
@@ -365,7 +396,6 @@ set(
 set(
 	CRYPTO_SOURCES
 
-	src/crypto/curve25519.cc
 	src/crypto/hkdf.cc
 	src/crypto/hmac.cc
 	src/crypto/openssl_util.cc
@@ -373,6 +403,8 @@ set(
 	src/crypto/random.cc
 	src/crypto/secure_util.cc
 	src/crypto/secure_hash.cc
+	src/crypto/rsa_private_key.cc
+	#src/net/quic/chromium/crypto/proof_source_chromium.cc
 )
 
 set(
@@ -431,6 +463,7 @@ if(Protobuf_FOUND AND FALSE)  # Turn off protobuf. Use bundled protobuf instead
 else()
 	set(
 		PROTO_RESULTS
+
 	)
 
 	# message("Cannot find protobuf")
@@ -471,9 +504,9 @@ add_library(
 target_link_libraries(quic ${BASE_ARCH_LIBRARIES} ssl crypto protobuf)
 
 #add_executable(
-#	test_quic_reverse_proxy
-
-#	custom/reverse_proxy.cc
+#	test_quic_server
+#
+#	custom/main.cc
 #)
 
 # XXX(serialx): Not sure if this is safe, since our CFLAGS contaminate boringssl build

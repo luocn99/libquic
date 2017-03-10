@@ -1,3 +1,4 @@
+include_directories(../../third_party/googletest/include/gtest/)
 add_library(
   test_support
 
@@ -6,4 +7,12 @@ add_library(
   file_test.cc
   malloc.cc
   test_util.cc
+)
+
+add_library(
+  gtest_main
+
+  OBJECT
+
+  gtest_main.cc
 )

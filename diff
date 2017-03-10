@@ -1,0 +1,641 @@
+Only in ../libquic_ori/src/: AUTHORS
+Files src/base/allocator/allocator_shim.cc and ../libquic_ori/src/base/allocator/allocator_shim.cc differ
+Files src/base/allocator/allocator_shim.h and ../libquic_ori/src/base/allocator/allocator_shim.h differ
+Files src/base/allocator/allocator_shim_internals.h and ../libquic_ori/src/base/allocator/allocator_shim_internals.h differ
+Files src/base/allocator/allocator_shim_override_cpp_symbols.h and ../libquic_ori/src/base/allocator/allocator_shim_override_cpp_symbols.h differ
+Files src/base/allocator/allocator_shim_override_glibc_weak_symbols.h and ../libquic_ori/src/base/allocator/allocator_shim_override_glibc_weak_symbols.h differ
+Files src/base/allocator/allocator_shim_override_linker_wrapped_symbols.h and ../libquic_ori/src/base/allocator/allocator_shim_override_linker_wrapped_symbols.h differ
+Files src/base/android/build_info.h and ../libquic_ori/src/base/android/build_info.h differ
+Files src/base/android/java_message_handler_factory.h and ../libquic_ori/src/base/android/java_message_handler_factory.h differ
+Files src/base/android/jni_android.cc and ../libquic_ori/src/base/android/jni_android.cc differ
+Files src/base/android/jni_android.h and ../libquic_ori/src/base/android/jni_android.h differ
+Files src/base/android/jni_utils.cc and ../libquic_ori/src/base/android/jni_utils.cc differ
+Files src/base/android/jni_utils.h and ../libquic_ori/src/base/android/jni_utils.h differ
+Files src/base/android/scoped_java_ref.h and ../libquic_ori/src/base/android/scoped_java_ref.h differ
+Files src/base/at_exit.cc and ../libquic_ori/src/base/at_exit.cc differ
+Files src/base/at_exit.h and ../libquic_ori/src/base/at_exit.h differ
+Files src/base/atomic_ref_count.h and ../libquic_ori/src/base/atomic_ref_count.h differ
+Files src/base/base_paths_posix.cc and ../libquic_ori/src/base/base_paths_posix.cc differ
+Files src/base/base_switches.cc and ../libquic_ori/src/base/base_switches.cc differ
+Files src/base/base_switches.h and ../libquic_ori/src/base/base_switches.h differ
+Files src/base/bind.h and ../libquic_ori/src/base/bind.h differ
+Files src/base/bind_helpers.h and ../libquic_ori/src/base/bind_helpers.h differ
+Files src/base/bind_internal.h and ../libquic_ori/src/base/bind_internal.h differ
+Files src/base/bits.h and ../libquic_ori/src/base/bits.h differ
+Files src/base/callback_forward.h and ../libquic_ori/src/base/callback_forward.h differ
+Files src/base/callback.h and ../libquic_ori/src/base/callback.h differ
+Files src/base/callback_helpers.h and ../libquic_ori/src/base/callback_helpers.h differ
+Files src/base/callback_internal.cc and ../libquic_ori/src/base/callback_internal.cc differ
+Files src/base/callback_internal.h and ../libquic_ori/src/base/callback_internal.h differ
+Files src/base/cancelable_callback.h and ../libquic_ori/src/base/cancelable_callback.h differ
+Files src/base/compiler_specific.h and ../libquic_ori/src/base/compiler_specific.h differ
+Only in src/base/containers: linked_list.h
+Files src/base/containers/mru_cache.h and ../libquic_ori/src/base/containers/mru_cache.h differ
+Files src/base/containers/small_map.h and ../libquic_ori/src/base/containers/small_map.h differ
+Files src/base/critical_closure.h and ../libquic_ori/src/base/critical_closure.h differ
+Files src/base/debug/activity_tracker.cc and ../libquic_ori/src/base/debug/activity_tracker.cc differ
+Files src/base/debug/activity_tracker.h and ../libquic_ori/src/base/debug/activity_tracker.h differ
+Only in src/base/debug: dump_without_crashing.cc
+Only in src/base/debug: dump_without_crashing.h
+Files src/base/debug/stack_trace.cc and ../libquic_ori/src/base/debug/stack_trace.cc differ
+Files src/base/debug/stack_trace.h and ../libquic_ori/src/base/debug/stack_trace.h differ
+Files src/base/debug/stack_trace_posix.cc and ../libquic_ori/src/base/debug/stack_trace_posix.cc differ
+Files src/base/debug/task_annotator.cc and ../libquic_ori/src/base/debug/task_annotator.cc differ
+Files src/base/debug/task_annotator.h and ../libquic_ori/src/base/debug/task_annotator.h differ
+Only in src/base/debug: thread_heap_usage_tracker.cc
+Only in src/base/debug: thread_heap_usage_tracker.h
+Files src/base/feature_list.h and ../libquic_ori/src/base/feature_list.h differ
+Only in src/base/files: file_descriptor_watcher_posix.cc
+Only in src/base/files: file_descriptor_watcher_posix.h
+Files src/base/files/file.h and ../libquic_ori/src/base/files/file.h differ
+Files src/base/files/file_path.cc and ../libquic_ori/src/base/files/file_path.cc differ
+Files src/base/files/file_path.h and ../libquic_ori/src/base/files/file_path.h differ
+Files src/base/files/file_posix.cc and ../libquic_ori/src/base/files/file_posix.cc differ
+Files src/base/files/file_util.h and ../libquic_ori/src/base/files/file_util.h differ
+Files src/base/files/file_util_mac.mm and ../libquic_ori/src/base/files/file_util_mac.mm differ
+Files src/base/files/file_util_posix.cc and ../libquic_ori/src/base/files/file_util_posix.cc differ
+Files src/base/files/memory_mapped_file_posix.cc and ../libquic_ori/src/base/files/memory_mapped_file_posix.cc differ
+Files src/base/files/scoped_file.cc and ../libquic_ori/src/base/files/scoped_file.cc differ
+Files src/base/json/json_parser.cc and ../libquic_ori/src/base/json/json_parser.cc differ
+Files src/base/json/json_parser.h and ../libquic_ori/src/base/json/json_parser.h differ
+Files src/base/json/json_reader.h and ../libquic_ori/src/base/json/json_reader.h differ
+Files src/base/json/json_string_value_serializer.cc and ../libquic_ori/src/base/json/json_string_value_serializer.cc differ
+Files src/base/json/json_string_value_serializer.h and ../libquic_ori/src/base/json/json_string_value_serializer.h differ
+Files src/base/json/json_writer.cc and ../libquic_ori/src/base/json/json_writer.cc differ
+Files src/base/json/json_writer.h and ../libquic_ori/src/base/json/json_writer.h differ
+Files src/base/lazy_instance.h and ../libquic_ori/src/base/lazy_instance.h differ
+Files src/base/logging.cc and ../libquic_ori/src/base/logging.cc differ
+Files src/base/logging.h and ../libquic_ori/src/base/logging.h differ
+Files src/base/mac/bundle_locations.h and ../libquic_ori/src/base/mac/bundle_locations.h differ
+Files src/base/mac/foundation_util.h and ../libquic_ori/src/base/mac/foundation_util.h differ
+Files src/base/mac/foundation_util.mm and ../libquic_ori/src/base/mac/foundation_util.mm differ
+Files src/base/mac/mac_util.h and ../libquic_ori/src/base/mac/mac_util.h differ
+Files src/base/mac/mac_util.mm and ../libquic_ori/src/base/mac/mac_util.mm differ
+Files src/base/mac/scoped_nsobject.h and ../libquic_ori/src/base/mac/scoped_nsobject.h differ
+Files src/base/mac/sdk_forward_declarations.h and ../libquic_ori/src/base/mac/sdk_forward_declarations.h differ
+Files src/base/mac/sdk_forward_declarations.mm and ../libquic_ori/src/base/mac/sdk_forward_declarations.mm differ
+Files src/base/memory/ref_counted.cc and ../libquic_ori/src/base/memory/ref_counted.cc differ
+Files src/base/memory/ref_counted.h and ../libquic_ori/src/base/memory/ref_counted.h differ
+Files src/base/memory/scoped_vector.h and ../libquic_ori/src/base/memory/scoped_vector.h differ
+Files src/base/memory/shared_memory.h and ../libquic_ori/src/base/memory/shared_memory.h differ
+Files src/base/memory/shared_memory_handle.h and ../libquic_ori/src/base/memory/shared_memory_handle.h differ
+Files src/base/memory/shared_memory_handle_mac.cc and ../libquic_ori/src/base/memory/shared_memory_handle_mac.cc differ
+Only in src/base/memory: shared_memory_helper.cc
+Only in src/base/memory: shared_memory_helper.h
+Files src/base/memory/shared_memory_mac.cc and ../libquic_ori/src/base/memory/shared_memory_mac.cc differ
+Files src/base/memory/shared_memory_posix.cc and ../libquic_ori/src/base/memory/shared_memory_posix.cc differ
+Files src/base/message_loop/incoming_task_queue.cc and ../libquic_ori/src/base/message_loop/incoming_task_queue.cc differ
+Files src/base/message_loop/incoming_task_queue.h and ../libquic_ori/src/base/message_loop/incoming_task_queue.h differ
+Files src/base/message_loop/message_loop.cc and ../libquic_ori/src/base/message_loop/message_loop.cc differ
+Files src/base/message_loop/message_loop.h and ../libquic_ori/src/base/message_loop/message_loop.h differ
+Files src/base/message_loop/message_pump.cc and ../libquic_ori/src/base/message_loop/message_pump.cc differ
+Files src/base/message_loop/message_pump_default.cc and ../libquic_ori/src/base/message_loop/message_pump_default.cc differ
+Files src/base/message_loop/message_pump.h and ../libquic_ori/src/base/message_loop/message_pump.h differ
+Files src/base/message_loop/message_pump_libevent.cc and ../libquic_ori/src/base/message_loop/message_pump_libevent.cc differ
+Files src/base/message_loop/message_pump_libevent.h and ../libquic_ori/src/base/message_loop/message_pump_libevent.h differ
+Files src/base/message_loop/message_pump_mac.mm and ../libquic_ori/src/base/message_loop/message_pump_mac.mm differ
+Files src/base/metrics/histogram_base.cc and ../libquic_ori/src/base/metrics/histogram_base.cc differ
+Files src/base/metrics/histogram_base.h and ../libquic_ori/src/base/metrics/histogram_base.h differ
+Files src/base/metrics/histogram.cc and ../libquic_ori/src/base/metrics/histogram.cc differ
+Files src/base/metrics/histogram.h and ../libquic_ori/src/base/metrics/histogram.h differ
+Files src/base/metrics/histogram_macros.h and ../libquic_ori/src/base/metrics/histogram_macros.h differ
+Only in src/base/metrics: histogram_macros_internal.h
+Only in src/base/metrics: histogram_macros_local.h
+Files src/base/metrics/histogram_samples.h and ../libquic_ori/src/base/metrics/histogram_samples.h differ
+Files src/base/metrics/persistent_histogram_allocator.cc and ../libquic_ori/src/base/metrics/persistent_histogram_allocator.cc differ
+Files src/base/metrics/persistent_histogram_allocator.h and ../libquic_ori/src/base/metrics/persistent_histogram_allocator.h differ
+Files src/base/metrics/persistent_memory_allocator.cc and ../libquic_ori/src/base/metrics/persistent_memory_allocator.cc differ
+Files src/base/metrics/persistent_memory_allocator.h and ../libquic_ori/src/base/metrics/persistent_memory_allocator.h differ
+Files src/base/metrics/persistent_sample_map.cc and ../libquic_ori/src/base/metrics/persistent_sample_map.cc differ
+Files src/base/metrics/persistent_sample_map.h and ../libquic_ori/src/base/metrics/persistent_sample_map.h differ
+Files src/base/metrics/sparse_histogram.cc and ../libquic_ori/src/base/metrics/sparse_histogram.cc differ
+Files src/base/metrics/sparse_histogram.h and ../libquic_ori/src/base/metrics/sparse_histogram.h differ
+Files src/base/metrics/statistics_recorder.cc and ../libquic_ori/src/base/metrics/statistics_recorder.cc differ
+Files src/base/metrics/statistics_recorder.h and ../libquic_ori/src/base/metrics/statistics_recorder.h differ
+Files src/base/numerics/safe_conversions.h and ../libquic_ori/src/base/numerics/safe_conversions.h differ
+Files src/base/numerics/safe_conversions_impl.h and ../libquic_ori/src/base/numerics/safe_conversions_impl.h differ
+Files src/base/numerics/safe_math.h and ../libquic_ori/src/base/numerics/safe_math.h differ
+Files src/base/numerics/safe_math_impl.h and ../libquic_ori/src/base/numerics/safe_math_impl.h differ
+Files src/base/observer_list.h and ../libquic_ori/src/base/observer_list.h differ
+Only in src/base: optional.h
+Files src/base/path_service.cc and ../libquic_ori/src/base/path_service.cc differ
+Files src/base/pending_task.cc and ../libquic_ori/src/base/pending_task.cc differ
+Files src/base/pending_task.h and ../libquic_ori/src/base/pending_task.h differ
+Files src/base/pickle.cc and ../libquic_ori/src/base/pickle.cc differ
+Only in src/base: post_task_and_reply_with_result_internal.h
+Files src/base/process/internal_linux.cc and ../libquic_ori/src/base/process/internal_linux.cc differ
+Files src/base/process/internal_linux.h and ../libquic_ori/src/base/process/internal_linux.h differ
+Files src/base/process/process.h and ../libquic_ori/src/base/process/process.h differ
+Only in src/base/process: process_mac.cc
+Files src/base/process/process_metrics.cc and ../libquic_ori/src/base/process/process_metrics.cc differ
+Files src/base/process/process_metrics.h and ../libquic_ori/src/base/process/process_metrics.h differ
+Files src/base/process/process_metrics_mac.cc and ../libquic_ori/src/base/process/process_metrics_mac.cc differ
+Files src/base/process/process_posix.cc and ../libquic_ori/src/base/process/process_posix.cc differ
+Only in ../libquic_ori/src/base/profiler: scoped_profile.cc
+Only in ../libquic_ori/src/base/profiler: scoped_profile.h
+Only in ../libquic_ori/src/base/profiler: scoped_tracker.cc
+Only in ../libquic_ori/src/base/profiler: scoped_tracker.h
+Files src/base/rand_util_posix.cc and ../libquic_ori/src/base/rand_util_posix.cc differ
+Files src/base/run_loop.cc and ../libquic_ori/src/base/run_loop.cc differ
+Files src/base/run_loop.h and ../libquic_ori/src/base/run_loop.h differ
+Files src/base/scoped_generic.h and ../libquic_ori/src/base/scoped_generic.h differ
+Files src/base/sequence_checker.h and ../libquic_ori/src/base/sequence_checker.h differ
+Files src/base/sequenced_task_runner.cc and ../libquic_ori/src/base/sequenced_task_runner.cc differ
+Files src/base/sequenced_task_runner.h and ../libquic_ori/src/base/sequenced_task_runner.h differ
+Files src/base/sequenced_task_runner_helpers.h and ../libquic_ori/src/base/sequenced_task_runner_helpers.h differ
+Files src/base/sequence_token.cc and ../libquic_ori/src/base/sequence_token.cc differ
+Files src/base/sequence_token.h and ../libquic_ori/src/base/sequence_token.h differ
+Files src/base/stl_util.h and ../libquic_ori/src/base/stl_util.h differ
+Files src/base/strings/string_number_conversions.cc and ../libquic_ori/src/base/strings/string_number_conversions.cc differ
+Files src/base/strings/string_split.cc and ../libquic_ori/src/base/strings/string_split.cc differ
+Files src/base/strings/string_split.h and ../libquic_ori/src/base/strings/string_split.h differ
+Files src/base/strings/string_util.cc and ../libquic_ori/src/base/strings/string_util.cc differ
+Files src/base/strings/string_util.h and ../libquic_ori/src/base/strings/string_util.h differ
+Files src/base/strings/utf_string_conversions.cc and ../libquic_ori/src/base/strings/utf_string_conversions.cc differ
+Only in ../libquic_ori/src/base/synchronization: cancellation_flag.h
+Files src/base/synchronization/condition_variable.h and ../libquic_ori/src/base/synchronization/condition_variable.h differ
+Files src/base/synchronization/waitable_event.h and ../libquic_ori/src/base/synchronization/waitable_event.h differ
+Files src/base/synchronization/waitable_event_posix.cc and ../libquic_ori/src/base/synchronization/waitable_event_posix.cc differ
+Files src/base/sys_byteorder.h and ../libquic_ori/src/base/sys_byteorder.h differ
+Files src/base/sys_info.cc and ../libquic_ori/src/base/sys_info.cc differ
+Files src/base/sys_info_freebsd.cc and ../libquic_ori/src/base/sys_info_freebsd.cc differ
+Files src/base/sys_info.h and ../libquic_ori/src/base/sys_info.h differ
+Files src/base/task_runner.cc and ../libquic_ori/src/base/task_runner.cc differ
+Files src/base/task_runner.h and ../libquic_ori/src/base/task_runner.h differ
+Files src/base/task_scheduler/delayed_task_manager.cc and ../libquic_ori/src/base/task_scheduler/delayed_task_manager.cc differ
+Files src/base/task_scheduler/delayed_task_manager.h and ../libquic_ori/src/base/task_scheduler/delayed_task_manager.h differ
+Files src/base/task_scheduler/post_task.cc and ../libquic_ori/src/base/task_scheduler/post_task.cc differ
+Files src/base/task_scheduler/post_task.h and ../libquic_ori/src/base/task_scheduler/post_task.h differ
+Only in ../libquic_ori/src/base/task_scheduler: scheduler_service_thread.cc
+Only in ../libquic_ori/src/base/task_scheduler: scheduler_service_thread.h
+Files src/base/task_scheduler/scheduler_worker.cc and ../libquic_ori/src/base/task_scheduler/scheduler_worker.cc differ
+Files src/base/task_scheduler/scheduler_worker.h and ../libquic_ori/src/base/task_scheduler/scheduler_worker.h differ
+Only in src/base/task_scheduler: scheduler_worker_params.h
+Files src/base/task_scheduler/scheduler_worker_pool.h and ../libquic_ori/src/base/task_scheduler/scheduler_worker_pool.h differ
+Files src/base/task_scheduler/scheduler_worker_pool_impl.cc and ../libquic_ori/src/base/task_scheduler/scheduler_worker_pool_impl.cc differ
+Files src/base/task_scheduler/scheduler_worker_pool_impl.h and ../libquic_ori/src/base/task_scheduler/scheduler_worker_pool_impl.h differ
+Files src/base/task_scheduler/scheduler_worker_pool_params.cc and ../libquic_ori/src/base/task_scheduler/scheduler_worker_pool_params.cc differ
+Files src/base/task_scheduler/scheduler_worker_pool_params.h and ../libquic_ori/src/base/task_scheduler/scheduler_worker_pool_params.h differ
+Only in src/base/task_scheduler: scoped_set_task_priority_for_current_thread.cc
+Only in src/base/task_scheduler: scoped_set_task_priority_for_current_thread.h
+Files src/base/task_scheduler/sequence.cc and ../libquic_ori/src/base/task_scheduler/sequence.cc differ
+Files src/base/task_scheduler/sequence.h and ../libquic_ori/src/base/task_scheduler/sequence.h differ
+Files src/base/task_scheduler/task.cc and ../libquic_ori/src/base/task_scheduler/task.cc differ
+Files src/base/task_scheduler/task.h and ../libquic_ori/src/base/task_scheduler/task.h differ
+Files src/base/task_scheduler/task_scheduler.cc and ../libquic_ori/src/base/task_scheduler/task_scheduler.cc differ
+Files src/base/task_scheduler/task_scheduler.h and ../libquic_ori/src/base/task_scheduler/task_scheduler.h differ
+Files src/base/task_scheduler/task_scheduler_impl.cc and ../libquic_ori/src/base/task_scheduler/task_scheduler_impl.cc differ
+Files src/base/task_scheduler/task_scheduler_impl.h and ../libquic_ori/src/base/task_scheduler/task_scheduler_impl.h differ
+Files src/base/task_scheduler/task_tracker.cc and ../libquic_ori/src/base/task_scheduler/task_tracker.cc differ
+Files src/base/task_scheduler/task_tracker.h and ../libquic_ori/src/base/task_scheduler/task_tracker.h differ
+Only in src/base/task_scheduler: task_tracker_posix.cc
+Only in src/base/task_scheduler: task_tracker_posix.h
+Files src/base/task_scheduler/task_traits.cc and ../libquic_ori/src/base/task_scheduler/task_traits.cc differ
+Files src/base/task_scheduler/task_traits.h and ../libquic_ori/src/base/task_scheduler/task_traits.h differ
+Files src/base/template_util.h and ../libquic_ori/src/base/template_util.h differ
+Files src/base/third_party/dmg_fp/dtoa.cc and ../libquic_ori/src/base/third_party/dmg_fp/dtoa.cc differ
+Files src/base/threading/platform_thread_freebsd.cc and ../libquic_ori/src/base/threading/platform_thread_freebsd.cc differ
+Files src/base/threading/platform_thread.h and ../libquic_ori/src/base/threading/platform_thread.h differ
+Files src/base/threading/platform_thread_linux.cc and ../libquic_ori/src/base/threading/platform_thread_linux.cc differ
+Files src/base/threading/platform_thread_mac.mm and ../libquic_ori/src/base/threading/platform_thread_mac.mm differ
+Files src/base/threading/post_task_and_reply_impl.cc and ../libquic_ori/src/base/threading/post_task_and_reply_impl.cc differ
+Files src/base/threading/post_task_and_reply_impl.h and ../libquic_ori/src/base/threading/post_task_and_reply_impl.h differ
+Files src/base/threading/sequenced_task_runner_handle.cc and ../libquic_ori/src/base/threading/sequenced_task_runner_handle.cc differ
+Files src/base/threading/sequenced_worker_pool.cc and ../libquic_ori/src/base/threading/sequenced_worker_pool.cc differ
+Files src/base/threading/sequenced_worker_pool.h and ../libquic_ori/src/base/threading/sequenced_worker_pool.h differ
+Files src/base/threading/simple_thread.cc and ../libquic_ori/src/base/threading/simple_thread.cc differ
+Files src/base/threading/simple_thread.h and ../libquic_ori/src/base/threading/simple_thread.h differ
+Files src/base/threading/thread.cc and ../libquic_ori/src/base/threading/thread.cc differ
+Files src/base/threading/thread_checker_impl.cc and ../libquic_ori/src/base/threading/thread_checker_impl.cc differ
+Files src/base/threading/thread.h and ../libquic_ori/src/base/threading/thread.h differ
+Only in ../libquic_ori/src/base/threading: thread_local_android.cc
+Files src/base/threading/thread_local.h and ../libquic_ori/src/base/threading/thread_local.h differ
+Only in ../libquic_ori/src/base/threading: thread_local_posix.cc
+Files src/base/threading/thread_local_storage.cc and ../libquic_ori/src/base/threading/thread_local_storage.cc differ
+Files src/base/threading/thread_local_storage.h and ../libquic_ori/src/base/threading/thread_local_storage.h differ
+Files src/base/threading/thread_restrictions.h and ../libquic_ori/src/base/threading/thread_restrictions.h differ
+Files src/base/threading/thread_task_runner_handle.cc and ../libquic_ori/src/base/threading/thread_task_runner_handle.cc differ
+Files src/base/threading/thread_task_runner_handle.h and ../libquic_ori/src/base/threading/thread_task_runner_handle.h differ
+Only in ../libquic_ori/src/base/threading: worker_pool.cc
+Only in ../libquic_ori/src/base/threading: worker_pool.h
+Only in ../libquic_ori/src/base/threading: worker_pool_posix.cc
+Only in ../libquic_ori/src/base/threading: worker_pool_posix.h
+Only in src/base/time: tick_clock.cc
+Only in src/base/time: tick_clock.h
+Files src/base/time/time.cc and ../libquic_ori/src/base/time/time.cc differ
+Files src/base/time/time.h and ../libquic_ori/src/base/time/time.h differ
+Files src/base/time/time_mac.cc and ../libquic_ori/src/base/time/time_mac.cc differ
+Files src/base/time/time_posix.cc and ../libquic_ori/src/base/time/time_posix.cc differ
+Files src/base/timer/timer.cc and ../libquic_ori/src/base/timer/timer.cc differ
+Files src/base/timer/timer.h and ../libquic_ori/src/base/timer/timer.h differ
+Only in src/base/trace_event: category_registry.cc
+Only in src/base/trace_event: category_registry.h
+Files src/base/trace_event/common/trace_event_common.h and ../libquic_ori/src/base/trace_event/common/trace_event_common.h differ
+Only in src/base/trace_event: event_name_filter.cc
+Only in src/base/trace_event: event_name_filter.h
+Files src/base/trace_event/heap_profiler_allocation_context_tracker.cc and ../libquic_ori/src/base/trace_event/heap_profiler_allocation_context_tracker.cc differ
+Files src/base/trace_event/heap_profiler_allocation_context_tracker.h and ../libquic_ori/src/base/trace_event/heap_profiler_allocation_context_tracker.h differ
+Files src/base/trace_event/heap_profiler_allocation_register.cc and ../libquic_ori/src/base/trace_event/heap_profiler_allocation_register.cc differ
+Files src/base/trace_event/heap_profiler_allocation_register.h and ../libquic_ori/src/base/trace_event/heap_profiler_allocation_register.h differ
+Only in src/base/trace_event: heap_profiler_event_filter.cc
+Only in src/base/trace_event: heap_profiler_event_filter.h
+Files src/base/trace_event/heap_profiler_heap_dump_writer.cc and ../libquic_ori/src/base/trace_event/heap_profiler_heap_dump_writer.cc differ
+Files src/base/trace_event/heap_profiler_stack_frame_deduplicator.cc and ../libquic_ori/src/base/trace_event/heap_profiler_stack_frame_deduplicator.cc differ
+Files src/base/trace_event/heap_profiler_stack_frame_deduplicator.h and ../libquic_ori/src/base/trace_event/heap_profiler_stack_frame_deduplicator.h differ
+Files src/base/trace_event/heap_profiler_type_name_deduplicator.cc and ../libquic_ori/src/base/trace_event/heap_profiler_type_name_deduplicator.cc differ
+Files src/base/trace_event/malloc_dump_provider.cc and ../libquic_ori/src/base/trace_event/malloc_dump_provider.cc differ
+Files src/base/trace_event/memory_allocator_dump.h and ../libquic_ori/src/base/trace_event/memory_allocator_dump.h differ
+Files src/base/trace_event/memory_dump_manager.cc and ../libquic_ori/src/base/trace_event/memory_dump_manager.cc differ
+Files src/base/trace_event/memory_dump_manager.h and ../libquic_ori/src/base/trace_event/memory_dump_manager.h differ
+Files src/base/trace_event/memory_dump_provider.h and ../libquic_ori/src/base/trace_event/memory_dump_provider.h differ
+Files src/base/trace_event/memory_dump_request_args.cc and ../libquic_ori/src/base/trace_event/memory_dump_request_args.cc differ
+Files src/base/trace_event/memory_dump_request_args.h and ../libquic_ori/src/base/trace_event/memory_dump_request_args.h differ
+Only in src/base/trace_event: memory_dump_scheduler.cc
+Only in src/base/trace_event: memory_dump_scheduler.h
+Files src/base/trace_event/memory_dump_session_state.cc and ../libquic_ori/src/base/trace_event/memory_dump_session_state.cc differ
+Files src/base/trace_event/memory_dump_session_state.h and ../libquic_ori/src/base/trace_event/memory_dump_session_state.h differ
+Files src/base/trace_event/memory_infra_background_whitelist.cc and ../libquic_ori/src/base/trace_event/memory_infra_background_whitelist.cc differ
+Only in src/base/trace_event: memory_usage_estimator.cc
+Only in src/base/trace_event: memory_usage_estimator.h
+Files src/base/trace_event/process_memory_dump.cc and ../libquic_ori/src/base/trace_event/process_memory_dump.cc differ
+Files src/base/trace_event/process_memory_dump.h and ../libquic_ori/src/base/trace_event/process_memory_dump.h differ
+Files src/base/trace_event/trace_buffer.cc and ../libquic_ori/src/base/trace_event/trace_buffer.cc differ
+Only in src/base/trace_event: trace_category.h
+Files src/base/trace_event/trace_config.cc and ../libquic_ori/src/base/trace_event/trace_config.cc differ
+Files src/base/trace_event/trace_config.h and ../libquic_ori/src/base/trace_event/trace_config.h differ
+Files src/base/trace_event/trace_event_argument.cc and ../libquic_ori/src/base/trace_event/trace_event_argument.cc differ
+Only in src/base/trace_event: trace_event_filter.cc
+Only in src/base/trace_event: trace_event_filter.h
+Files src/base/trace_event/trace_event.h and ../libquic_ori/src/base/trace_event/trace_event.h differ
+Files src/base/trace_event/trace_event_impl.cc and ../libquic_ori/src/base/trace_event/trace_event_impl.cc differ
+Files src/base/trace_event/trace_event_impl.h and ../libquic_ori/src/base/trace_event/trace_event_impl.h differ
+Files src/base/trace_event/trace_event_memory_overhead.cc and ../libquic_ori/src/base/trace_event/trace_event_memory_overhead.cc differ
+Files src/base/trace_event/trace_event_synthetic_delay.h and ../libquic_ori/src/base/trace_event/trace_event_synthetic_delay.h differ
+Files src/base/trace_event/trace_log.cc and ../libquic_ori/src/base/trace_event/trace_log.cc differ
+Files src/base/trace_event/trace_log.h and ../libquic_ori/src/base/trace_event/trace_log.h differ
+Only in ../libquic_ori/src/base/trace_event: trace_sampling_thread.cc
+Only in ../libquic_ori/src/base/trace_event: trace_sampling_thread.h
+Files src/base/tuple.h and ../libquic_ori/src/base/tuple.h differ
+Files src/base/values.cc and ../libquic_ori/src/base/values.cc differ
+Files src/base/values.h and ../libquic_ori/src/base/values.h differ
+Files src/build/build_config.h and ../libquic_ori/src/build/build_config.h differ
+Only in ../libquic_ori/src/crypto: curve25519.cc
+Only in ../libquic_ori/src/crypto: curve25519.h
+Files src/crypto/hmac.cc and ../libquic_ori/src/crypto/hmac.cc differ
+Files src/crypto/openssl_util.cc and ../libquic_ori/src/crypto/openssl_util.cc differ
+Files src/crypto/random.h and ../libquic_ori/src/crypto/random.h differ
+Only in ../libquic_ori/src/crypto: scoped_openssl_types.h
+Only in ../libquic_ori/src/crypto: secure_hash.cc
+Only in ../libquic_ori/src/crypto: secure_hash.h
+Files src/crypto/symmetric_key.cc and ../libquic_ori/src/crypto/symmetric_key.cc differ
+Files src/net/base/arena.cc and ../libquic_ori/src/net/base/arena.cc differ
+Files src/net/base/arena.h and ../libquic_ori/src/net/base/arena.h differ
+Files src/net/base/escape.cc and ../libquic_ori/src/net/base/escape.cc differ
+Files src/net/base/escape.h and ../libquic_ori/src/net/base/escape.h differ
+Files src/net/base/host_port_pair.cc and ../libquic_ori/src/net/base/host_port_pair.cc differ
+Files src/net/base/host_port_pair.h and ../libquic_ori/src/net/base/host_port_pair.h differ
+Files src/net/base/int128.h and ../libquic_ori/src/net/base/int128.h differ
+Only in src/net/base: interval.h
+Only in src/net/base: interval_set.h
+Files src/net/base/iovec.h and ../libquic_ori/src/net/base/iovec.h differ
+Files src/net/base/ip_address.h and ../libquic_ori/src/net/base/ip_address.h differ
+Files src/net/base/linked_hash_map.h and ../libquic_ori/src/net/base/linked_hash_map.h differ
+Files src/net/base/net_error_list.h and ../libquic_ori/src/net/base/net_error_list.h differ
+Files src/net/base/net_errors.cc and ../libquic_ori/src/net/base/net_errors.cc differ
+Files src/net/base/net_errors.h and ../libquic_ori/src/net/base/net_errors.h differ
+Files src/net/base/net_errors_posix.cc and ../libquic_ori/src/net/base/net_errors_posix.cc differ
+Files src/net/base/parse_number.h and ../libquic_ori/src/net/base/parse_number.h differ
+Only in ../libquic_ori/src/net/base: port_util.cc
+Only in ../libquic_ori/src/net/base: port_util.h
+Only in src/net/base: sockaddr_storage.cc
+Only in src/net/base: sockaddr_storage.h
+Files src/net/base/sys_addrinfo.h and ../libquic_ori/src/net/base/sys_addrinfo.h differ
+Files src/net/base/url_util.cc and ../libquic_ori/src/net/base/url_util.cc differ
+Files src/net/http/http_auth_challenge_tokenizer.h and ../libquic_ori/src/net/http/http_auth_challenge_tokenizer.h differ
+Files src/net/http/http_auth_scheme.cc and ../libquic_ori/src/net/http/http_auth_scheme.cc differ
+Files src/net/http/http_auth_scheme.h and ../libquic_ori/src/net/http/http_auth_scheme.h differ
+Files src/net/http/http_log_util.cc and ../libquic_ori/src/net/http/http_log_util.cc differ
+Files src/net/http/http_log_util.h and ../libquic_ori/src/net/http/http_log_util.h differ
+Files src/net/http/http_util.cc and ../libquic_ori/src/net/http/http_util.cc differ
+Files src/net/http/http_util.h and ../libquic_ori/src/net/http/http_util.h differ
+Only in src/net: http2
+Files src/net/log/net_log.cc and ../libquic_ori/src/net/log/net_log.cc differ
+Only in src/net/log: net_log_entry.cc
+Only in src/net/log: net_log_entry.h
+Files src/net/log/net_log_event_type_list.h and ../libquic_ori/src/net/log/net_log_event_type_list.h differ
+Files src/net/log/net_log.h and ../libquic_ori/src/net/log/net_log.h differ
+Only in src/net/log: net_log_parameters_callback.h
+Only in src/net/log: net_log_source.cc
+Only in src/net/log: net_log_source.h
+Files src/net/log/net_log_source_type_list.h and ../libquic_ori/src/net/log/net_log_source_type_list.h differ
+Only in src/net/quic/chromium: quic_utils_chromium.cc
+Files src/net/quic/chromium/quic_utils_chromium.h and ../libquic_ori/src/net/quic/chromium/quic_utils_chromium.h differ
+Only in src/net/quic/core/congestion_control: bandwidth_sampler.cc
+Only in src/net/quic/core/congestion_control: bandwidth_sampler.h
+Only in src/net/quic/core/congestion_control: bbr_sender.cc
+Only in src/net/quic/core/congestion_control: bbr_sender.h
+Files src/net/quic/core/congestion_control/cubic_bytes.cc and ../libquic_ori/src/net/quic/core/congestion_control/cubic_bytes.cc differ
+Files src/net/quic/core/congestion_control/cubic_bytes.h and ../libquic_ori/src/net/quic/core/congestion_control/cubic_bytes.h differ
+Files src/net/quic/core/congestion_control/cubic.cc and ../libquic_ori/src/net/quic/core/congestion_control/cubic.cc differ
+Files src/net/quic/core/congestion_control/cubic.h and ../libquic_ori/src/net/quic/core/congestion_control/cubic.h differ
+Files src/net/quic/core/congestion_control/general_loss_algorithm.cc and ../libquic_ori/src/net/quic/core/congestion_control/general_loss_algorithm.cc differ
+Files src/net/quic/core/congestion_control/general_loss_algorithm.h and ../libquic_ori/src/net/quic/core/congestion_control/general_loss_algorithm.h differ
+Files src/net/quic/core/congestion_control/hybrid_slow_start.cc and ../libquic_ori/src/net/quic/core/congestion_control/hybrid_slow_start.cc differ
+Files src/net/quic/core/congestion_control/hybrid_slow_start.h and ../libquic_ori/src/net/quic/core/congestion_control/hybrid_slow_start.h differ
+Files src/net/quic/core/congestion_control/loss_detection_interface.h and ../libquic_ori/src/net/quic/core/congestion_control/loss_detection_interface.h differ
+Files src/net/quic/core/congestion_control/pacing_sender.cc and ../libquic_ori/src/net/quic/core/congestion_control/pacing_sender.cc differ
+Files src/net/quic/core/congestion_control/pacing_sender.h and ../libquic_ori/src/net/quic/core/congestion_control/pacing_sender.h differ
+Files src/net/quic/core/congestion_control/prr_sender.cc and ../libquic_ori/src/net/quic/core/congestion_control/prr_sender.cc differ
+Files src/net/quic/core/congestion_control/prr_sender.h and ../libquic_ori/src/net/quic/core/congestion_control/prr_sender.h differ
+Files src/net/quic/core/congestion_control/rtt_stats.cc and ../libquic_ori/src/net/quic/core/congestion_control/rtt_stats.cc differ
+Files src/net/quic/core/congestion_control/rtt_stats.h and ../libquic_ori/src/net/quic/core/congestion_control/rtt_stats.h differ
+Files src/net/quic/core/congestion_control/send_algorithm_interface.cc and ../libquic_ori/src/net/quic/core/congestion_control/send_algorithm_interface.cc differ
+Files src/net/quic/core/congestion_control/send_algorithm_interface.h and ../libquic_ori/src/net/quic/core/congestion_control/send_algorithm_interface.h differ
+Files src/net/quic/core/congestion_control/tcp_cubic_sender_base.cc and ../libquic_ori/src/net/quic/core/congestion_control/tcp_cubic_sender_base.cc differ
+Files src/net/quic/core/congestion_control/tcp_cubic_sender_base.h and ../libquic_ori/src/net/quic/core/congestion_control/tcp_cubic_sender_base.h differ
+Files src/net/quic/core/congestion_control/tcp_cubic_sender_bytes.cc and ../libquic_ori/src/net/quic/core/congestion_control/tcp_cubic_sender_bytes.cc differ
+Files src/net/quic/core/congestion_control/tcp_cubic_sender_bytes.h and ../libquic_ori/src/net/quic/core/congestion_control/tcp_cubic_sender_bytes.h differ
+Files src/net/quic/core/congestion_control/tcp_cubic_sender_packets.cc and ../libquic_ori/src/net/quic/core/congestion_control/tcp_cubic_sender_packets.cc differ
+Files src/net/quic/core/congestion_control/tcp_cubic_sender_packets.h and ../libquic_ori/src/net/quic/core/congestion_control/tcp_cubic_sender_packets.h differ
+Files src/net/quic/core/congestion_control/windowed_filter.h and ../libquic_ori/src/net/quic/core/congestion_control/windowed_filter.h differ
+Files src/net/quic/core/crypto/aead_base_decrypter.cc and ../libquic_ori/src/net/quic/core/crypto/aead_base_decrypter.cc differ
+Files src/net/quic/core/crypto/aead_base_decrypter.h and ../libquic_ori/src/net/quic/core/crypto/aead_base_decrypter.h differ
+Files src/net/quic/core/crypto/aead_base_encrypter.cc and ../libquic_ori/src/net/quic/core/crypto/aead_base_encrypter.cc differ
+Files src/net/quic/core/crypto/aead_base_encrypter.h and ../libquic_ori/src/net/quic/core/crypto/aead_base_encrypter.h differ
+Files src/net/quic/core/crypto/aes_128_gcm_12_decrypter.cc and ../libquic_ori/src/net/quic/core/crypto/aes_128_gcm_12_decrypter.cc differ
+Files src/net/quic/core/crypto/aes_128_gcm_12_decrypter.h and ../libquic_ori/src/net/quic/core/crypto/aes_128_gcm_12_decrypter.h differ
+Files src/net/quic/core/crypto/aes_128_gcm_12_encrypter.cc and ../libquic_ori/src/net/quic/core/crypto/aes_128_gcm_12_encrypter.cc differ
+Files src/net/quic/core/crypto/aes_128_gcm_12_encrypter.h and ../libquic_ori/src/net/quic/core/crypto/aes_128_gcm_12_encrypter.h differ
+Files src/net/quic/core/crypto/cert_compressor.cc and ../libquic_ori/src/net/quic/core/crypto/cert_compressor.cc differ
+Files src/net/quic/core/crypto/cert_compressor.h and ../libquic_ori/src/net/quic/core/crypto/cert_compressor.h differ
+Files src/net/quic/core/crypto/chacha20_poly1305_decrypter.cc and ../libquic_ori/src/net/quic/core/crypto/chacha20_poly1305_decrypter.cc differ
+Files src/net/quic/core/crypto/chacha20_poly1305_decrypter.h and ../libquic_ori/src/net/quic/core/crypto/chacha20_poly1305_decrypter.h differ
+Files src/net/quic/core/crypto/chacha20_poly1305_encrypter.cc and ../libquic_ori/src/net/quic/core/crypto/chacha20_poly1305_encrypter.cc differ
+Files src/net/quic/core/crypto/chacha20_poly1305_encrypter.h and ../libquic_ori/src/net/quic/core/crypto/chacha20_poly1305_encrypter.h differ
+Files src/net/quic/core/crypto/channel_id.cc and ../libquic_ori/src/net/quic/core/crypto/channel_id.cc differ
+Files src/net/quic/core/crypto/channel_id.h and ../libquic_ori/src/net/quic/core/crypto/channel_id.h differ
+Files src/net/quic/core/crypto/common_cert_set.cc and ../libquic_ori/src/net/quic/core/crypto/common_cert_set.cc differ
+Files src/net/quic/core/crypto/common_cert_set.h and ../libquic_ori/src/net/quic/core/crypto/common_cert_set.h differ
+Files src/net/quic/core/crypto/crypto_framer.cc and ../libquic_ori/src/net/quic/core/crypto/crypto_framer.cc differ
+Files src/net/quic/core/crypto/crypto_framer.h and ../libquic_ori/src/net/quic/core/crypto/crypto_framer.h differ
+Files src/net/quic/core/crypto/crypto_handshake.h and ../libquic_ori/src/net/quic/core/crypto/crypto_handshake.h differ
+Files src/net/quic/core/crypto/crypto_handshake_message.cc and ../libquic_ori/src/net/quic/core/crypto/crypto_handshake_message.cc differ
+Files src/net/quic/core/crypto/crypto_handshake_message.h and ../libquic_ori/src/net/quic/core/crypto/crypto_handshake_message.h differ
+Files src/net/quic/core/crypto/crypto_protocol.h and ../libquic_ori/src/net/quic/core/crypto/crypto_protocol.h differ
+Files src/net/quic/core/crypto/crypto_secret_boxer.cc and ../libquic_ori/src/net/quic/core/crypto/crypto_secret_boxer.cc differ
+Files src/net/quic/core/crypto/crypto_secret_boxer.h and ../libquic_ori/src/net/quic/core/crypto/crypto_secret_boxer.h differ
+Files src/net/quic/core/crypto/crypto_server_config_protobuf.cc and ../libquic_ori/src/net/quic/core/crypto/crypto_server_config_protobuf.cc differ
+Files src/net/quic/core/crypto/crypto_server_config_protobuf.h and ../libquic_ori/src/net/quic/core/crypto/crypto_server_config_protobuf.h differ
+Files src/net/quic/core/crypto/crypto_utils.cc and ../libquic_ori/src/net/quic/core/crypto/crypto_utils.cc differ
+Files src/net/quic/core/crypto/crypto_utils.h and ../libquic_ori/src/net/quic/core/crypto/crypto_utils.h differ
+Files src/net/quic/core/crypto/curve25519_key_exchange.cc and ../libquic_ori/src/net/quic/core/crypto/curve25519_key_exchange.cc differ
+Files src/net/quic/core/crypto/curve25519_key_exchange.h and ../libquic_ori/src/net/quic/core/crypto/curve25519_key_exchange.h differ
+Files src/net/quic/core/crypto/ephemeral_key_source.h and ../libquic_ori/src/net/quic/core/crypto/ephemeral_key_source.h differ
+Files src/net/quic/core/crypto/key_exchange.h and ../libquic_ori/src/net/quic/core/crypto/key_exchange.h differ
+Only in ../libquic_ori/src/net/quic/core/crypto: local_strike_register_client.cc
+Only in ../libquic_ori/src/net/quic/core/crypto: local_strike_register_client.h
+Files src/net/quic/core/crypto/null_decrypter.cc and ../libquic_ori/src/net/quic/core/crypto/null_decrypter.cc differ
+Files src/net/quic/core/crypto/null_decrypter.h and ../libquic_ori/src/net/quic/core/crypto/null_decrypter.h differ
+Files src/net/quic/core/crypto/null_encrypter.cc and ../libquic_ori/src/net/quic/core/crypto/null_encrypter.cc differ
+Files src/net/quic/core/crypto/null_encrypter.h and ../libquic_ori/src/net/quic/core/crypto/null_encrypter.h differ
+Files src/net/quic/core/crypto/p256_key_exchange.cc and ../libquic_ori/src/net/quic/core/crypto/p256_key_exchange.cc differ
+Files src/net/quic/core/crypto/p256_key_exchange.h and ../libquic_ori/src/net/quic/core/crypto/p256_key_exchange.h differ
+Files src/net/quic/core/crypto/proof_source.cc and ../libquic_ori/src/net/quic/core/crypto/proof_source.cc differ
+Files src/net/quic/core/crypto/proof_source.h and ../libquic_ori/src/net/quic/core/crypto/proof_source.h differ
+Files src/net/quic/core/crypto/proof_verifier.h and ../libquic_ori/src/net/quic/core/crypto/proof_verifier.h differ
+Files src/net/quic/core/crypto/quic_compressed_certs_cache.cc and ../libquic_ori/src/net/quic/core/crypto/quic_compressed_certs_cache.cc differ
+Files src/net/quic/core/crypto/quic_compressed_certs_cache.h and ../libquic_ori/src/net/quic/core/crypto/quic_compressed_certs_cache.h differ
+Files src/net/quic/core/crypto/quic_crypto_client_config.cc and ../libquic_ori/src/net/quic/core/crypto/quic_crypto_client_config.cc differ
+Files src/net/quic/core/crypto/quic_crypto_client_config.h and ../libquic_ori/src/net/quic/core/crypto/quic_crypto_client_config.h differ
+Only in src/net/quic/core/crypto: quic_crypto_proof.cc
+Only in src/net/quic/core/crypto: quic_crypto_proof.h
+Files src/net/quic/core/crypto/quic_crypto_server_config.cc and ../libquic_ori/src/net/quic/core/crypto/quic_crypto_server_config.cc differ
+Files src/net/quic/core/crypto/quic_crypto_server_config.h and ../libquic_ori/src/net/quic/core/crypto/quic_crypto_server_config.h differ
+Files src/net/quic/core/crypto/quic_decrypter.cc and ../libquic_ori/src/net/quic/core/crypto/quic_decrypter.cc differ
+Files src/net/quic/core/crypto/quic_decrypter.h and ../libquic_ori/src/net/quic/core/crypto/quic_decrypter.h differ
+Files src/net/quic/core/crypto/quic_encrypter.cc and ../libquic_ori/src/net/quic/core/crypto/quic_encrypter.cc differ
+Files src/net/quic/core/crypto/quic_encrypter.h and ../libquic_ori/src/net/quic/core/crypto/quic_encrypter.h differ
+Files src/net/quic/core/crypto/quic_random.cc and ../libquic_ori/src/net/quic/core/crypto/quic_random.cc differ
+Files src/net/quic/core/crypto/quic_random.h and ../libquic_ori/src/net/quic/core/crypto/quic_random.h differ
+Files src/net/quic/core/crypto/scoped_evp_aead_ctx.h and ../libquic_ori/src/net/quic/core/crypto/scoped_evp_aead_ctx.h differ
+Only in ../libquic_ori/src/net/quic/core/crypto: strike_register.cc
+Only in ../libquic_ori/src/net/quic/core/crypto: strike_register_client.h
+Only in ../libquic_ori/src/net/quic/core/crypto: strike_register.h
+Only in src/net/quic/core: frames
+Only in ../libquic_ori/src/net/quic/core: interval.h
+Only in ../libquic_ori/src/net/quic/core: interval_set.h
+Only in ../libquic_ori/src/net/quic/core: iovector.cc
+Only in ../libquic_ori/src/net/quic/core: iovector.h
+Only in ../libquic_ori/src/net/quic/core/proto: cached_network_parameters.pb.cc
+Only in ../libquic_ori/src/net/quic/core/proto: cached_network_parameters.pb.h
+Only in ../libquic_ori/src/net/quic/core/proto: source_address_token.pb.cc
+Only in ../libquic_ori/src/net/quic/core/proto: source_address_token.pb.h
+Only in src/net/quic/core: quic_ack_listener_interface.cc
+Only in src/net/quic/core: quic_ack_listener_interface.h
+Files src/net/quic/core/quic_alarm.cc and ../libquic_ori/src/net/quic/core/quic_alarm.cc differ
+Files src/net/quic/core/quic_alarm_factory.h and ../libquic_ori/src/net/quic/core/quic_alarm_factory.h differ
+Files src/net/quic/core/quic_alarm.h and ../libquic_ori/src/net/quic/core/quic_alarm.h differ
+Files src/net/quic/core/quic_arena_scoped_ptr.h and ../libquic_ori/src/net/quic/core/quic_arena_scoped_ptr.h differ
+Files src/net/quic/core/quic_bandwidth.cc and ../libquic_ori/src/net/quic/core/quic_bandwidth.cc differ
+Files src/net/quic/core/quic_bandwidth.h and ../libquic_ori/src/net/quic/core/quic_bandwidth.h differ
+Files src/net/quic/core/quic_blocked_writer_interface.h and ../libquic_ori/src/net/quic/core/quic_blocked_writer_interface.h differ
+Only in src/net/quic/core: quic_buffer_allocator.cc
+Only in src/net/quic/core: quic_buffer_allocator.h
+Files src/net/quic/core/quic_buffered_packet_store.cc and ../libquic_ori/src/net/quic/core/quic_buffered_packet_store.cc differ
+Files src/net/quic/core/quic_buffered_packet_store.h and ../libquic_ori/src/net/quic/core/quic_buffered_packet_store.h differ
+Only in ../libquic_ori/src/net/quic/core: quic_bug_tracker.h
+Files src/net/quic/core/quic_client_promised_info.cc and ../libquic_ori/src/net/quic/core/quic_client_promised_info.cc differ
+Files src/net/quic/core/quic_client_promised_info.h and ../libquic_ori/src/net/quic/core/quic_client_promised_info.h differ
+Files src/net/quic/core/quic_client_push_promise_index.h and ../libquic_ori/src/net/quic/core/quic_client_push_promise_index.h differ
+Files src/net/quic/core/quic_client_session_base.cc and ../libquic_ori/src/net/quic/core/quic_client_session_base.cc differ
+Files src/net/quic/core/quic_client_session_base.h and ../libquic_ori/src/net/quic/core/quic_client_session_base.h differ
+Only in ../libquic_ori/src/net/quic/core: quic_clock.cc
+Only in ../libquic_ori/src/net/quic/core: quic_clock.h
+Files src/net/quic/core/quic_config.cc and ../libquic_ori/src/net/quic/core/quic_config.cc differ
+Files src/net/quic/core/quic_config.h and ../libquic_ori/src/net/quic/core/quic_config.h differ
+Files src/net/quic/core/quic_connection.cc and ../libquic_ori/src/net/quic/core/quic_connection.cc differ
+Only in src/net/quic/core: quic_connection_close_delegate_interface.h
+Files src/net/quic/core/quic_connection.h and ../libquic_ori/src/net/quic/core/quic_connection.h differ
+Files src/net/quic/core/quic_connection_stats.cc and ../libquic_ori/src/net/quic/core/quic_connection_stats.cc differ
+Files src/net/quic/core/quic_connection_stats.h and ../libquic_ori/src/net/quic/core/quic_connection_stats.h differ
+Only in src/net/quic/core: quic_constants.cc
+Only in src/net/quic/core: quic_constants.h
+Files src/net/quic/core/quic_crypto_client_stream.cc and ../libquic_ori/src/net/quic/core/quic_crypto_client_stream.cc differ
+Files src/net/quic/core/quic_crypto_client_stream.h and ../libquic_ori/src/net/quic/core/quic_crypto_client_stream.h differ
+Files src/net/quic/core/quic_crypto_server_stream.cc and ../libquic_ori/src/net/quic/core/quic_crypto_server_stream.cc differ
+Files src/net/quic/core/quic_crypto_server_stream.h and ../libquic_ori/src/net/quic/core/quic_crypto_server_stream.h differ
+Files src/net/quic/core/quic_crypto_stream.cc and ../libquic_ori/src/net/quic/core/quic_crypto_stream.cc differ
+Files src/net/quic/core/quic_crypto_stream.h and ../libquic_ori/src/net/quic/core/quic_crypto_stream.h differ
+Files src/net/quic/core/quic_data_reader.cc and ../libquic_ori/src/net/quic/core/quic_data_reader.cc differ
+Files src/net/quic/core/quic_data_reader.h and ../libquic_ori/src/net/quic/core/quic_data_reader.h differ
+Files src/net/quic/core/quic_data_writer.cc and ../libquic_ori/src/net/quic/core/quic_data_writer.cc differ
+Files src/net/quic/core/quic_data_writer.h and ../libquic_ori/src/net/quic/core/quic_data_writer.h differ
+Only in src/net/quic/core: quic_error_codes.cc
+Only in src/net/quic/core: quic_error_codes.h
+Files src/net/quic/core/quic_flags.h and ../libquic_ori/src/net/quic/core/quic_flags.h differ
+Files src/net/quic/core/quic_flags_list.h and ../libquic_ori/src/net/quic/core/quic_flags_list.h differ
+Files src/net/quic/core/quic_flow_controller.cc and ../libquic_ori/src/net/quic/core/quic_flow_controller.cc differ
+Files src/net/quic/core/quic_flow_controller.h and ../libquic_ori/src/net/quic/core/quic_flow_controller.h differ
+Files src/net/quic/core/quic_framer.cc and ../libquic_ori/src/net/quic/core/quic_framer.cc differ
+Files src/net/quic/core/quic_framer.h and ../libquic_ori/src/net/quic/core/quic_framer.h differ
+Files src/net/quic/core/quic_header_list.cc and ../libquic_ori/src/net/quic/core/quic_header_list.cc differ
+Files src/net/quic/core/quic_header_list.h and ../libquic_ori/src/net/quic/core/quic_header_list.h differ
+Files src/net/quic/core/quic_headers_stream.cc and ../libquic_ori/src/net/quic/core/quic_headers_stream.cc differ
+Files src/net/quic/core/quic_headers_stream.h and ../libquic_ori/src/net/quic/core/quic_headers_stream.h differ
+Only in src/net/quic/core: quic_iovector.h
+Only in ../libquic_ori/src/net/quic/core: quic_multipath_sent_packet_manager.cc
+Only in ../libquic_ori/src/net/quic/core: quic_multipath_sent_packet_manager.h
+Files src/net/quic/core/quic_one_block_arena.h and ../libquic_ori/src/net/quic/core/quic_one_block_arena.h differ
+Files src/net/quic/core/quic_packet_creator.cc and ../libquic_ori/src/net/quic/core/quic_packet_creator.cc differ
+Files src/net/quic/core/quic_packet_creator.h and ../libquic_ori/src/net/quic/core/quic_packet_creator.h differ
+Files src/net/quic/core/quic_packet_generator.cc and ../libquic_ori/src/net/quic/core/quic_packet_generator.cc differ
+Files src/net/quic/core/quic_packet_generator.h and ../libquic_ori/src/net/quic/core/quic_packet_generator.h differ
+Only in src/net/quic/core: quic_packets.cc
+Only in src/net/quic/core: quic_packets.h
+Files src/net/quic/core/quic_packet_writer.h and ../libquic_ori/src/net/quic/core/quic_packet_writer.h differ
+Only in src/net/quic/core: quic_pending_retransmission.h
+Only in ../libquic_ori/src/net/quic/core: quic_protocol.cc
+Only in ../libquic_ori/src/net/quic/core: quic_protocol.h
+Files src/net/quic/core/quic_received_packet_manager.cc and ../libquic_ori/src/net/quic/core/quic_received_packet_manager.cc differ
+Files src/net/quic/core/quic_received_packet_manager.h and ../libquic_ori/src/net/quic/core/quic_received_packet_manager.h differ
+Only in ../libquic_ori/src/net/quic/core: quic_sent_entropy_manager.cc
+Only in ../libquic_ori/src/net/quic/core: quic_sent_entropy_manager.h
+Files src/net/quic/core/quic_sent_packet_manager.cc and ../libquic_ori/src/net/quic/core/quic_sent_packet_manager.cc differ
+Files src/net/quic/core/quic_sent_packet_manager.h and ../libquic_ori/src/net/quic/core/quic_sent_packet_manager.h differ
+Only in ../libquic_ori/src/net/quic/core: quic_sent_packet_manager_interface.h
+Files src/net/quic/core/quic_server_id.cc and ../libquic_ori/src/net/quic/core/quic_server_id.cc differ
+Files src/net/quic/core/quic_server_id.h and ../libquic_ori/src/net/quic/core/quic_server_id.h differ
+Only in ../libquic_ori/src/net/quic/core: quic_server_session_base.cc
+Only in ../libquic_ori/src/net/quic/core: quic_server_session_base.h
+Files src/net/quic/core/quic_session.cc and ../libquic_ori/src/net/quic/core/quic_session.cc differ
+Files src/net/quic/core/quic_session.h and ../libquic_ori/src/net/quic/core/quic_session.h differ
+Files src/net/quic/core/quic_simple_buffer_allocator.h and ../libquic_ori/src/net/quic/core/quic_simple_buffer_allocator.h differ
+Files src/net/quic/core/quic_socket_address_coder.cc and ../libquic_ori/src/net/quic/core/quic_socket_address_coder.cc differ
+Files src/net/quic/core/quic_socket_address_coder.h and ../libquic_ori/src/net/quic/core/quic_socket_address_coder.h differ
+Files src/net/quic/core/quic_spdy_session.cc and ../libquic_ori/src/net/quic/core/quic_spdy_session.cc differ
+Files src/net/quic/core/quic_spdy_session.h and ../libquic_ori/src/net/quic/core/quic_spdy_session.h differ
+Files src/net/quic/core/quic_spdy_stream.cc and ../libquic_ori/src/net/quic/core/quic_spdy_stream.cc differ
+Files src/net/quic/core/quic_spdy_stream.h and ../libquic_ori/src/net/quic/core/quic_spdy_stream.h differ
+Only in src/net/quic/core: quic_stream.cc
+Only in src/net/quic/core: quic_stream.h
+Files src/net/quic/core/quic_stream_sequencer_buffer.cc and ../libquic_ori/src/net/quic/core/quic_stream_sequencer_buffer.cc differ
+Files src/net/quic/core/quic_stream_sequencer_buffer.h and ../libquic_ori/src/net/quic/core/quic_stream_sequencer_buffer.h differ
+Files src/net/quic/core/quic_stream_sequencer.cc and ../libquic_ori/src/net/quic/core/quic_stream_sequencer.cc differ
+Files src/net/quic/core/quic_stream_sequencer.h and ../libquic_ori/src/net/quic/core/quic_stream_sequencer.h differ
+Files src/net/quic/core/quic_sustained_bandwidth_recorder.cc and ../libquic_ori/src/net/quic/core/quic_sustained_bandwidth_recorder.cc differ
+Files src/net/quic/core/quic_sustained_bandwidth_recorder.h and ../libquic_ori/src/net/quic/core/quic_sustained_bandwidth_recorder.h differ
+Only in src/net/quic/core: quic_tag.cc
+Only in src/net/quic/core: quic_tag.h
+Files src/net/quic/core/quic_time.cc and ../libquic_ori/src/net/quic/core/quic_time.cc differ
+Files src/net/quic/core/quic_time.h and ../libquic_ori/src/net/quic/core/quic_time.h differ
+Only in src/net/quic/core: quic_transmission_info.cc
+Only in src/net/quic/core: quic_transmission_info.h
+Files src/net/quic/core/quic_types.cc and ../libquic_ori/src/net/quic/core/quic_types.cc differ
+Files src/net/quic/core/quic_types.h and ../libquic_ori/src/net/quic/core/quic_types.h differ
+Files src/net/quic/core/quic_unacked_packet_map.cc and ../libquic_ori/src/net/quic/core/quic_unacked_packet_map.cc differ
+Files src/net/quic/core/quic_unacked_packet_map.h and ../libquic_ori/src/net/quic/core/quic_unacked_packet_map.h differ
+Files src/net/quic/core/quic_utils.cc and ../libquic_ori/src/net/quic/core/quic_utils.cc differ
+Files src/net/quic/core/quic_utils.h and ../libquic_ori/src/net/quic/core/quic_utils.h differ
+Only in src/net/quic/core: quic_versions.cc
+Only in src/net/quic/core: quic_versions.h
+Files src/net/quic/core/quic_write_blocked_list.h and ../libquic_ori/src/net/quic/core/quic_write_blocked_list.h differ
+Only in ../libquic_ori/src/net/quic/core: reliable_quic_stream.cc
+Only in ../libquic_ori/src/net/quic/core: reliable_quic_stream.h
+Files src/net/quic/core/spdy_utils.cc and ../libquic_ori/src/net/quic/core/spdy_utils.cc differ
+Files src/net/quic/core/spdy_utils.h and ../libquic_ori/src/net/quic/core/spdy_utils.h differ
+Only in src/net/quic: platform
+Files src/net/spdy/hpack/hpack_constants.cc and ../libquic_ori/src/net/spdy/hpack/hpack_constants.cc differ
+Files src/net/spdy/hpack/hpack_constants.h and ../libquic_ori/src/net/spdy/hpack/hpack_constants.h differ
+Only in src/net/spdy/hpack: hpack_decoder2.cc
+Only in src/net/spdy/hpack: hpack_decoder2.h
+Only in src/net/spdy/hpack: hpack_decoder3.cc
+Only in src/net/spdy/hpack: hpack_decoder3.h
+Files src/net/spdy/hpack/hpack_decoder.cc and ../libquic_ori/src/net/spdy/hpack/hpack_decoder.cc differ
+Files src/net/spdy/hpack/hpack_decoder.h and ../libquic_ori/src/net/spdy/hpack/hpack_decoder.h differ
+Files src/net/spdy/hpack/hpack_decoder_interface.h and ../libquic_ori/src/net/spdy/hpack/hpack_decoder_interface.h differ
+Files src/net/spdy/hpack/hpack_encoder.cc and ../libquic_ori/src/net/spdy/hpack/hpack_encoder.cc differ
+Files src/net/spdy/hpack/hpack_encoder.h and ../libquic_ori/src/net/spdy/hpack/hpack_encoder.h differ
+Files src/net/spdy/hpack/hpack_entry.cc and ../libquic_ori/src/net/spdy/hpack/hpack_entry.cc differ
+Files src/net/spdy/hpack/hpack_entry.h and ../libquic_ori/src/net/spdy/hpack/hpack_entry.h differ
+Files src/net/spdy/hpack/hpack_header_table.cc and ../libquic_ori/src/net/spdy/hpack/hpack_header_table.cc differ
+Files src/net/spdy/hpack/hpack_header_table.h and ../libquic_ori/src/net/spdy/hpack/hpack_header_table.h differ
+Files src/net/spdy/hpack/hpack_huffman_decoder.cc and ../libquic_ori/src/net/spdy/hpack/hpack_huffman_decoder.cc differ
+Files src/net/spdy/hpack/hpack_huffman_table.cc and ../libquic_ori/src/net/spdy/hpack/hpack_huffman_table.cc differ
+Files src/net/spdy/hpack/hpack_huffman_table.h and ../libquic_ori/src/net/spdy/hpack/hpack_huffman_table.h differ
+Files src/net/spdy/hpack/hpack_input_stream.h and ../libquic_ori/src/net/spdy/hpack/hpack_input_stream.h differ
+Files src/net/spdy/hpack/hpack_output_stream.cc and ../libquic_ori/src/net/spdy/hpack/hpack_output_stream.cc differ
+Files src/net/spdy/hpack/hpack_output_stream.h and ../libquic_ori/src/net/spdy/hpack/hpack_output_stream.h differ
+Files src/net/spdy/hpack/hpack_static_table.cc and ../libquic_ori/src/net/spdy/hpack/hpack_static_table.cc differ
+Files src/net/spdy/hpack/hpack_static_table.h and ../libquic_ori/src/net/spdy/hpack/hpack_static_table.h differ
+Only in src/net/spdy: http2_frame_decoder_adapter.cc
+Only in src/net/spdy: http2_frame_decoder_adapter.h
+Only in src/net/spdy: platform
+Files src/net/spdy/spdy_alt_svc_wire_format.cc and ../libquic_ori/src/net/spdy/spdy_alt_svc_wire_format.cc differ
+Files src/net/spdy/spdy_flags.cc and ../libquic_ori/src/net/spdy/spdy_flags.cc differ
+Files src/net/spdy/spdy_flags.h and ../libquic_ori/src/net/spdy/spdy_flags.h differ
+Files src/net/spdy/spdy_frame_builder.cc and ../libquic_ori/src/net/spdy/spdy_frame_builder.cc differ
+Files src/net/spdy/spdy_frame_builder.h and ../libquic_ori/src/net/spdy/spdy_frame_builder.h differ
+Files src/net/spdy/spdy_framer.cc and ../libquic_ori/src/net/spdy/spdy_framer.cc differ
+Files src/net/spdy/spdy_framer_decoder_adapter.cc and ../libquic_ori/src/net/spdy/spdy_framer_decoder_adapter.cc differ
+Files src/net/spdy/spdy_framer_decoder_adapter.h and ../libquic_ori/src/net/spdy/spdy_framer_decoder_adapter.h differ
+Files src/net/spdy/spdy_frame_reader.cc and ../libquic_ori/src/net/spdy/spdy_frame_reader.cc differ
+Files src/net/spdy/spdy_framer.h and ../libquic_ori/src/net/spdy/spdy_framer.h differ
+Files src/net/spdy/spdy_header_block.cc and ../libquic_ori/src/net/spdy/spdy_header_block.cc differ
+Files src/net/spdy/spdy_header_block.h and ../libquic_ori/src/net/spdy/spdy_header_block.h differ
+Only in ../libquic_ori/src/net/spdy: spdy_headers_block_parser.cc
+Only in ../libquic_ori/src/net/spdy: spdy_headers_block_parser.h
+Files src/net/spdy/spdy_headers_handler_interface.h and ../libquic_ori/src/net/spdy/spdy_headers_handler_interface.h differ
+Only in ../libquic_ori/src/net/spdy: spdy_pinnable_buffer_piece.cc
+Only in ../libquic_ori/src/net/spdy: spdy_pinnable_buffer_piece.h
+Only in ../libquic_ori/src/net/spdy: spdy_prefixed_buffer_reader.cc
+Only in ../libquic_ori/src/net/spdy: spdy_prefixed_buffer_reader.h
+Files src/net/spdy/spdy_protocol.cc and ../libquic_ori/src/net/spdy/spdy_protocol.cc differ
+Files src/net/spdy/spdy_protocol.h and ../libquic_ori/src/net/spdy/spdy_protocol.h differ
+Files src/net/spdy/write_scheduler.h and ../libquic_ori/src/net/spdy/write_scheduler.h differ
+Only in src/net/spdy: zero_copy_output_buffer.h
+Only in ../libquic_ori/src/third_party: ashmem
+Only in src/third_party: boringssl
+Files src/third_party/protobuf/OWNERS and ../libquic_ori/src/third_party/protobuf/OWNERS differ
+Files src/third_party/protobuf/proto_library.gni and ../libquic_ori/src/third_party/protobuf/proto_library.gni differ
+Only in src/third_party/protobuf/python/google/protobuf: descriptor_pb2.py
+Files src/third_party/zlib/adler32.c and ../libquic_ori/src/third_party/zlib/adler32.c differ
+Files src/third_party/zlib/compress.c and ../libquic_ori/src/third_party/zlib/compress.c differ
+Files src/third_party/zlib/crc32.c and ../libquic_ori/src/third_party/zlib/crc32.c differ
+Files src/third_party/zlib/deflate.c and ../libquic_ori/src/third_party/zlib/deflate.c differ
+Files src/third_party/zlib/deflate.h and ../libquic_ori/src/third_party/zlib/deflate.h differ
+Files src/third_party/zlib/gzguts.h and ../libquic_ori/src/third_party/zlib/gzguts.h differ
+Files src/third_party/zlib/gzlib.c and ../libquic_ori/src/third_party/zlib/gzlib.c differ
+Files src/third_party/zlib/gzread.c and ../libquic_ori/src/third_party/zlib/gzread.c differ
+Files src/third_party/zlib/gzwrite.c and ../libquic_ori/src/third_party/zlib/gzwrite.c differ
+Files src/third_party/zlib/infback.c and ../libquic_ori/src/third_party/zlib/infback.c differ
+Files src/third_party/zlib/inffast.c and ../libquic_ori/src/third_party/zlib/inffast.c differ
+Files src/third_party/zlib/inflate.c and ../libquic_ori/src/third_party/zlib/inflate.c differ
+Files src/third_party/zlib/inflate.h and ../libquic_ori/src/third_party/zlib/inflate.h differ
+Files src/third_party/zlib/inftrees.c and ../libquic_ori/src/third_party/zlib/inftrees.c differ
+Only in ../libquic_ori/src/third_party/zlib: mozzconf.h
+Only in src/third_party/zlib: names.h
+Files src/third_party/zlib/simd_stub.c and ../libquic_ori/src/third_party/zlib/simd_stub.c differ
+Files src/third_party/zlib/trees.c and ../libquic_ori/src/third_party/zlib/trees.c differ
+Files src/third_party/zlib/uncompr.c and ../libquic_ori/src/third_party/zlib/uncompr.c differ
+Files src/third_party/zlib/x86.c and ../libquic_ori/src/third_party/zlib/x86.c differ
+Files src/third_party/zlib/zconf.h and ../libquic_ori/src/third_party/zlib/zconf.h differ
+Files src/third_party/zlib/zlib.h and ../libquic_ori/src/third_party/zlib/zlib.h differ
+Files src/third_party/zlib/zutil.c and ../libquic_ori/src/third_party/zlib/zutil.c differ
+Files src/third_party/zlib/zutil.h and ../libquic_ori/src/third_party/zlib/zutil.h differ
+Files src/url/gurl.cc and ../libquic_ori/src/url/gurl.cc differ
+Files src/url/gurl.h and ../libquic_ori/src/url/gurl.h differ
+Files src/url/third_party/mozilla/url_parse.cc and ../libquic_ori/src/url/third_party/mozilla/url_parse.cc differ
+Files src/url/third_party/mozilla/url_parse.h and ../libquic_ori/src/url/third_party/mozilla/url_parse.h differ
+Files src/url/url_canon_etc.cc and ../libquic_ori/src/url/url_canon_etc.cc differ
+Files src/url/url_canon.h and ../libquic_ori/src/url/url_canon.h differ
+Files src/url/url_canon_host.cc and ../libquic_ori/src/url/url_canon_host.cc differ
+Files src/url/url_canon_icu_unittest.cc and ../libquic_ori/src/url/url_canon_icu_unittest.cc differ
+Files src/url/url_canon_relative.cc and ../libquic_ori/src/url/url_canon_relative.cc differ
+Files src/url/url_canon_stdstring.cc and ../libquic_ori/src/url/url_canon_stdstring.cc differ
+Files src/url/url_canon_stdstring.h and ../libquic_ori/src/url/url_canon_stdstring.h differ
+Files src/url/url_canon_stdurl.cc and ../libquic_ori/src/url/url_canon_stdurl.cc differ
+Files src/url/url_canon_unittest.cc and ../libquic_ori/src/url/url_canon_unittest.cc differ
+Files src/url/url_constants.cc and ../libquic_ori/src/url/url_constants.cc differ
+Files src/url/url_constants.h and ../libquic_ori/src/url/url_constants.h differ
+Files src/url/url_util.cc and ../libquic_ori/src/url/url_util.cc differ
+Files src/url/url_util.h and ../libquic_ori/src/url/url_util.h differ

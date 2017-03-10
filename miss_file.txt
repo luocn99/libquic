@@ -1,0 +1,27 @@
+not find:
+src/net/quic/core/proto/cached_network_parameters.pb.cc
+source_address_token.pb.cc
+quic_protocol.cc
+iovector.cc
+strike_register.cc
+/net/quic/platform/api/quic_clock.cc
+quic_sent_entropy_manager.cc
+quic_multipath_sent_packet_manager.cc
+reliable_quic_stream.cc
+spdy_headers_block_parser.cc
+thread_local_posix.cc
+curve25519.cc
+add:
+strike_register.cc
+local_strike_register_client.cc
+
+copy:
+quic_server_session_base.cc
+cp ~/work/quic/test_proto-quic/proto-quic/src/net/quic/core/quic_server_session_base.h ../src/net/quic/core/
+cp ~/work/quic/test_proto-quic/proto-quic/src/net/base/port_util.* ../src/net/base/
+cp ~/work/quic/test_proto-quic/proto-quic/src/net/spdy/spdy_pinnable_buffer_piece.* ../src/net/spdy/
+cp ~/work/quic/test_proto-quic/proto-quic/src/net/spdy/spdy_prefixed_buffer_reader.* ../src/net/spdy/
+cp ~/work/quic/test_proto-quic/proto-quic/src/crypto/secure_hash* ../src/crypto/
+
+
+

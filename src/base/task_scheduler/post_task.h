@@ -5,9 +5,11 @@
 #ifndef BASE_TASK_SCHEDULER_POST_TASK_H_
 #define BASE_TASK_SCHEDULER_POST_TASK_H_
 
+#include <utility>
+
 #include "base/base_export.h"
 #include "base/bind.h"
-#include "base/callback_forward.h"
+#include "base/callback.h"
 #include "base/location.h"
 #include "base/memory/ref_counted.h"
 #include "base/post_task_and_reply_with_result_internal.h"
@@ -15,18 +17,13 @@
 #include "base/single_thread_task_runner.h"
 #include "base/task_runner.h"
 #include "base/task_scheduler/task_traits.h"
+#include "base/time/time.h"
 
 namespace base {
 
 // This is the preferred interface to post tasks to the TaskScheduler.
 //
-// Note: The TaskScheduler is still in an experimental phase in Chrome. Please
-// refrain from using this API unless you know what you are doing.
-//
-// TaskScheduler must have been registered for the current process via
-// TaskScheduler::SetInstance() before the functions below are valid.
-//
-// To post a simple one-off task:
+// To post a simple one-off task with default traits:
 //     PostTask(FROM_HERE, Bind(...));
 //
 // To post a high priority one-off task to respond to a user interaction:
@@ -35,34 +32,55 @@ namespace base {
 //         TaskTraits().WithPriority(TaskPriority::USER_BLOCKING),
 //         Bind(...));
 //
-// To post tasks that must run in sequence:
+// To post tasks that must run in sequence with default traits:
 //     scoped_refptr<SequencedTaskRunner> task_runner =
 //         CreateSequencedTaskRunnerWithTraits(TaskTraits());
 //     task_runner.PostTask(FROM_HERE, Bind(...));
 //     task_runner.PostTask(FROM_HERE, Bind(...));
 //
-// To post file I/O tasks that must run in sequence and can be skipped on
+// To post tasks that may block, must run in sequence and can be skipped on
 // shutdown:
 //     scoped_refptr<SequencedTaskRunner> task_runner =
 //         CreateSequencedTaskRunnerWithTraits(
-//             TaskTraits().WithFileIO().WithShutdownBehavior(
+//             TaskTraits().MayBlock().WithShutdownBehavior(
 //                 TaskShutdownBehavior::SKIP_ON_SHUTDOWN));
 //     task_runner.PostTask(FROM_HERE, Bind(...));
 //     task_runner.PostTask(FROM_HERE, Bind(...));
 //
-// The default TaskTraits apply to tasks that:
-//     (1) don't need to do I/O,
-//     (2) don't affect user interaction and/or visible elements, and
+// The default traits apply to tasks that:
+//     (1) don't block (ref. MayBlock() and WithBaseSyncPrimitives()),
+//     (2) prefer inheriting the current priority to specifying their own, and
 //     (3) can either block shutdown or be skipped on shutdown
-//         (barring current TaskScheduler default).
-// If those loose requirements are sufficient for your task, use
-// PostTask[AndReply], otherwise override these with explicit traits via
-// PostTaskWithTraits[AndReply].
+//         (TaskScheduler implementation is free to choose a fitting default).
+// Explicit traits must be specified for tasks for which these loose
+// requirements are not sufficient.
+//
+// Tasks posted through functions below will run on threads owned by the
+// registered TaskScheduler (i.e. not on the main thread). Tasks posted through
+// functions below with a delay may be coalesced (i.e. delays may be adjusted to
+// reduce the number of wakeups and hence power consumption).
+//
+// Prerequisite: A TaskScheduler must have been registered for the current
+// process via TaskScheduler::SetInstance() before the functions below are
+// valid. This is typically done during the initialization phase in each
+// process. If your code is not running in that phase, you most likely don't
+// have to worry about this. You will encounter DCHECKs or nullptr dereferences
+// if this is violated. For tests, prefer base::test::ScopedTaskScheduler.
 
 // Posts |task| to the TaskScheduler. Calling this is equivalent to calling
 // PostTaskWithTraits with plain TaskTraits.
 BASE_EXPORT void PostTask(const tracked_objects::Location& from_here,
                           const Closure& task);
+
+// Posts |task| to the TaskScheduler. |task| will not run before |delay|
+// expires. Calling this is equivalent to calling PostDelayedTaskWithTraits with
+// plain TaskTraits.
+//
+// Use PostDelayedTaskWithTraits to specify a BACKGROUND priority if the task
+// doesn't have to run as soon as |delay| expires.
+BASE_EXPORT void PostDelayedTask(const tracked_objects::Location& from_here,
+                                 const Closure& task,
+                                 TimeDelta delay);
 
 // Posts |task| to the TaskScheduler and posts |reply| on the caller's execution
 // context (i.e. same sequence or thread and same TaskTraits if applicable) when
@@ -70,8 +88,8 @@ BASE_EXPORT void PostTask(const tracked_objects::Location& from_here,
 // PostTaskWithTraitsAndReply with plain TaskTraits. Can only be called when
 // SequencedTaskRunnerHandle::IsSet().
 BASE_EXPORT void PostTaskAndReply(const tracked_objects::Location& from_here,
-                                  const Closure& task,
-                                  const Closure& reply);
+                                  Closure task,
+                                  Closure reply);
 
 // Posts |task| to the TaskScheduler and posts |reply| with the return value of
 // |task| as argument on the caller's execution context (i.e. same sequence or
@@ -80,15 +98,27 @@ BASE_EXPORT void PostTaskAndReply(const tracked_objects::Location& from_here,
 // TaskTraits. Can only be called when SequencedTaskRunnerHandle::IsSet().
 template <typename TaskReturnType, typename ReplyArgType>
 void PostTaskAndReplyWithResult(const tracked_objects::Location& from_here,
-                                const Callback<TaskReturnType(void)>& task,
-                                const Callback<void(ReplyArgType)>& reply) {
-  PostTaskWithTraitsAndReplyWithResult(from_here, TaskTraits(), task, reply);
+                                Callback<TaskReturnType(void)> task,
+                                Callback<void(ReplyArgType)> reply) {
+  PostTaskWithTraitsAndReplyWithResult(from_here, TaskTraits(), std::move(task),
+                                       std::move(reply));
 }
 
 // Posts |task| with specific |traits| to the TaskScheduler.
 BASE_EXPORT void PostTaskWithTraits(const tracked_objects::Location& from_here,
                                     const TaskTraits& traits,
                                     const Closure& task);
+
+// Posts |task| with specific |traits| to the TaskScheduler. |task| will not run
+// before |delay| expires.
+//
+// Specify a BACKGROUND priority via |traits| if the task doesn't have to run as
+// soon as |delay| expires.
+BASE_EXPORT void PostDelayedTaskWithTraits(
+    const tracked_objects::Location& from_here,
+    const TaskTraits& traits,
+    const Closure& task,
+    TimeDelta delay);
 
 // Posts |task| with specific |traits| to the TaskScheduler and posts |reply| on
 // the caller's execution context (i.e. same sequence or thread and same
@@ -97,8 +127,8 @@ BASE_EXPORT void PostTaskWithTraits(const tracked_objects::Location& from_here,
 BASE_EXPORT void PostTaskWithTraitsAndReply(
     const tracked_objects::Location& from_here,
     const TaskTraits& traits,
-    const Closure& task,
-    const Closure& reply);
+    Closure task,
+    Closure reply);
 
 // Posts |task| with specific |traits| to the TaskScheduler and posts |reply|
 // with the return value of |task| as argument on the caller's execution context
@@ -108,19 +138,15 @@ template <typename TaskReturnType, typename ReplyArgType>
 void PostTaskWithTraitsAndReplyWithResult(
     const tracked_objects::Location& from_here,
     const TaskTraits& traits,
-    const Callback<TaskReturnType(void)>& task,
-    const Callback<void(ReplyArgType)>& reply) {
+    Callback<TaskReturnType()> task,
+    Callback<void(ReplyArgType)> reply) {
   TaskReturnType* result = new TaskReturnType();
   return PostTaskWithTraitsAndReply(
-      from_here, traits,
-      Bind(&internal::ReturnAsParamAdapter<TaskReturnType>, task, result),
-      Bind(&internal::ReplyAdapter<TaskReturnType, ReplyArgType>, reply,
-           Owned(result)));
+      from_here, traits, Bind(&internal::ReturnAsParamAdapter<TaskReturnType>,
+                              std::move(task), result),
+      Bind(&internal::ReplyAdapter<TaskReturnType, ReplyArgType>,
+           std::move(reply), Owned(result)));
 }
-
-// Delayed tasks posted to TaskRunners returned by the functions below may be
-// coalesced (i.e. delays may be adjusted to reduce the number of wakeups and
-// hence power consumption).
 
 // Returns a TaskRunner whose PostTask invocations result in scheduling tasks
 // using |traits|. Tasks may run in any order and in parallel.

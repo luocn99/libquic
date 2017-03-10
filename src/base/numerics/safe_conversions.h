@@ -36,6 +36,9 @@ namespace base {
 //  IsValueNegative<>() - A convenience function that will accept any arithmetic
 //      type as an argument and will return whether the value is less than zero.
 //      Unsigned types always return false.
+//  SafeUnsignedAbs() - Returns the absolute value of the supplied integer
+//      parameter as an unsigned result (thus avoiding an overflow if the value
+//      is the signed, two's complement minimum).
 //  StrictNumeric<> - A wrapper type that performs assignments and copies via
 //      the strict_cast<> template, and can perform valid arithmetic comparisons
 //      across any range of arithmetic types. StrictNumeric is the return type
@@ -48,24 +51,7 @@ namespace base {
 // for the destination type.
 template <typename Dst, typename Src>
 constexpr bool IsValueInRangeForNumericType(Src value) {
-  return internal::DstRangeRelationToSrcRange<Dst>(value) ==
-         internal::RANGE_VALID;
-}
-
-// Convenience function for determining if a numeric value is negative without
-// throwing compiler warnings on: unsigned(value) < 0.
-template <typename T,
-          typename std::enable_if<std::is_signed<T>::value>::type* = nullptr>
-constexpr bool IsValueNegative(T value) {
-  static_assert(std::is_arithmetic<T>::value, "Argument must be numeric.");
-  return value < 0;
-}
-
-template <typename T,
-          typename std::enable_if<!std::is_signed<T>::value>::type* = nullptr>
-constexpr bool IsValueNegative(T) {
-  static_assert(std::is_arithmetic<T>::value, "Argument must be numeric.");
-  return false;
+  return internal::DstRangeRelationToSrcRange<Dst>(value).IsValid();
 }
 
 // Forces a crash, like a CHECK(false). Used for numeric boundary errors.
@@ -96,62 +82,56 @@ constexpr Dst checked_cast(Src value) {
              : CheckHandler::template HandleFailure<Dst>();
 }
 
-// HandleNaN will return 0 in this case.
-struct SaturatedCastNaNBehaviorReturnZero {
-  template <typename T>
-  static constexpr T HandleFailure() {
-    return T();
+// Default boundaries for integral/float: max/infinity, lowest/-infinity, 0/NaN.
+template <typename T>
+struct SaturationDefaultHandler {
+  static constexpr T NaN() {
+    return std::numeric_limits<T>::has_quiet_NaN
+               ? std::numeric_limits<T>::quiet_NaN()
+               : T();
+  }
+  static constexpr T max() { return std::numeric_limits<T>::max(); }
+  static constexpr T Overflow() {
+    return std::numeric_limits<T>::has_infinity
+               ? std::numeric_limits<T>::infinity()
+               : std::numeric_limits<T>::max();
+  }
+  static constexpr T lowest() { return std::numeric_limits<T>::lowest(); }
+  static constexpr T Underflow() {
+    return std::numeric_limits<T>::has_infinity
+               ? std::numeric_limits<T>::infinity() * -1
+               : std::numeric_limits<T>::lowest();
   }
 };
 
 namespace internal {
-// These wrappers are used for C++11 constexpr support by avoiding both the
-// declaration of local variables and invalid evaluation resulting from the
-// lack of "constexpr if" support in the saturated_cast template function.
-// TODO(jschuh): Convert to single function with a switch once we support C++14.
-template <
-    typename Dst,
-    class NaNHandler,
-    typename Src,
-    typename std::enable_if<std::is_integral<Dst>::value>::type* = nullptr>
-constexpr Dst saturated_cast_impl(const Src value,
-                                  const RangeConstraint constraint) {
-  return constraint == RANGE_VALID
-             ? static_cast<Dst>(value)
-             : (constraint == RANGE_UNDERFLOW
-                    ? std::numeric_limits<Dst>::lowest()
-                    : (constraint == RANGE_OVERFLOW
-                           ? std::numeric_limits<Dst>::max()
-                           : NaNHandler::template HandleFailure<Dst>()));
-}
 
-template <typename Dst,
-          class NaNHandler,
-          typename Src,
-          typename std::enable_if<std::is_floating_point<Dst>::value>::type* =
-              nullptr>
-constexpr Dst saturated_cast_impl(const Src value,
-                                  const RangeConstraint constraint) {
-  return constraint == RANGE_VALID
-             ? static_cast<Dst>(value)
-             : (constraint == RANGE_UNDERFLOW
-                    ? -std::numeric_limits<Dst>::infinity()
-                    : (constraint == RANGE_OVERFLOW
-                           ? std::numeric_limits<Dst>::infinity()
-                           : std::numeric_limits<Dst>::quiet_NaN()));
+template <typename Dst, template <typename> class S, typename Src>
+constexpr Dst saturated_cast_impl(Src value, RangeCheck constraint) {
+  // For some reason clang generates much better code when the branch is
+  // structured exactly this way, rather than a sequence of checks.
+  return !constraint.IsOverflowFlagSet()
+             ? (!constraint.IsUnderflowFlagSet() ? static_cast<Dst>(value)
+                                                 : S<Dst>::Underflow())
+             // Skip this check for integral Src, which cannot be NaN.
+             : (std::is_integral<Src>::value || !constraint.IsUnderflowFlagSet()
+                    ? S<Dst>::Overflow()
+                    : S<Dst>::NaN());
 }
 
 // saturated_cast<> is analogous to static_cast<> for numeric types, except
-// that the specified numeric conversion will saturate rather than overflow or
-// underflow. NaN assignment to an integral will defer the behavior to a
-// specified class. By default, it will return 0.
+// that the specified numeric conversion will saturate by default rather than
+// overflow or underflow, and NaN assignment to an integral will return 0.
+// All boundary condition behaviors can be overriden with a custom handler.
 template <typename Dst,
-          class NaNHandler = SaturatedCastNaNBehaviorReturnZero,
+          template <typename>
+          class SaturationHandler = SaturationDefaultHandler,
           typename Src>
 constexpr Dst saturated_cast(Src value) {
   using SrcType = typename UnderlyingType<Src>::type;
-  return internal::saturated_cast_impl<Dst, NaNHandler>(
-      value, internal::DstRangeRelationToSrcRange<Dst, SrcType>(value));
+  return saturated_cast_impl<Dst, SaturationHandler, SrcType>(
+      value,
+      DstRangeRelationToSrcRange<Dst, SaturationHandler, SrcType>(value));
 }
 
 // strict_cast<> is analogous to static_cast<> for numeric types, except that
@@ -279,8 +259,10 @@ STRICT_COMPARISON_OP(IsNotEqual, !=);
 
 using internal::strict_cast;
 using internal::saturated_cast;
+using internal::SafeUnsignedAbs;
 using internal::StrictNumeric;
 using internal::MakeStrictNum;
+using internal::IsValueNegative;
 
 // Explicitly make a shorter size_t alias for convenience.
 using SizeT = StrictNumeric<size_t>;

@@ -10,6 +10,7 @@
 #include <cstdint>
 #include <ostream>
 
+#include "base/macros.h"
 #include "net/quic/core/congestion_control/bandwidth_sampler.h"
 #include "net/quic/core/congestion_control/send_algorithm_interface.h"
 #include "net/quic/core/congestion_control/windowed_filter.h"
@@ -18,6 +19,7 @@
 #include "net/quic/core/quic_packets.h"
 #include "net/quic/core/quic_time.h"
 #include "net/quic/core/quic_unacked_packet_map.h"
+#include "net/quic/platform/api/quic_export.h"
 
 namespace net {
 
@@ -36,7 +38,7 @@ typedef uint64_t QuicRoundTripCount;
 // TODO(vasilvv): implement traffic policer (long-term sampling) mode.
 //
 // TODO(vasilvv): implement packet conservation.
-class NET_EXPORT_PRIVATE BbrSender : public SendAlgorithmInterface {
+class QUIC_EXPORT_PRIVATE BbrSender : public SendAlgorithmInterface {
  public:
   enum Mode {
     // Startup phase of the connection.
@@ -85,10 +87,10 @@ class NET_EXPORT_PRIVATE BbrSender : public SendAlgorithmInterface {
     QuicByteCount recovery_window;
 
     bool last_sample_is_app_limited;
+    QuicPacketNumber end_of_app_limited_phase;
   };
 
-  BbrSender(const QuicClock* clock,
-            const RttStats* rtt_stats,
+  BbrSender(const RttStats* rtt_stats,
             const QuicUnackedPacketMap* unacked_packets,
             QuicPacketCount initial_tcp_congestion_window,
             QuicPacketCount max_tcp_congestion_window,
@@ -100,7 +102,8 @@ class NET_EXPORT_PRIVATE BbrSender : public SendAlgorithmInterface {
   bool InRecovery() const override;
 
   void SetFromConfig(const QuicConfig& config,
-                     Perspective perspective) override {}
+                     Perspective perspective) override;
+
   void ResumeConnectionState(
       const CachedNetworkParameters& cached_network_params,
       bool max_bandwidth_resumption) override {}
@@ -127,6 +130,9 @@ class NET_EXPORT_PRIVATE BbrSender : public SendAlgorithmInterface {
   std::string GetDebugState() const override;
   void OnApplicationLimited(QuicByteCount bytes_in_flight) override;
   // End implementation of SendAlgorithmInterface.
+
+  // Gets the number of RTTs BBR remains in STARTUP phase.
+  QuicRoundTripCount num_startup_rtts() const { return num_startup_rtts_; }
 
   DebugState ExportDebugState() const;
 
@@ -188,7 +194,6 @@ class NET_EXPORT_PRIVATE BbrSender : public SendAlgorithmInterface {
   // recovery.
   void CalculateRecoveryWindow(QuicByteCount bytes_acked);
 
-  const QuicClock* clock_;
   const RttStats* rtt_stats_;
   const QuicUnackedPacketMap* unacked_packets_;
   QuicRandom* random_;
@@ -235,6 +240,15 @@ class NET_EXPORT_PRIVATE BbrSender : public SendAlgorithmInterface {
   // The gain currently applied to the congestion window.
   float congestion_window_gain_;
 
+  // The gain used for the congestion window during PROBE_BW.  Latched from
+  // quic_bbr_cwnd_gain flag.
+  const float congestion_window_gain_constant_;
+  // The coefficient by which mean RTT variance is added to the congestion
+  // window.  Latched from quic_bbr_rtt_variation_weight flag.
+  const float rtt_variance_weight_;
+  // The number of RTTs to stay in STARTUP mode.  Defaults to 3.
+  QuicRoundTripCount num_startup_rtts_;
+
   // Number of round-trips in PROBE_BW mode, used for determining the current
   // pacing gain cycle.
   int cycle_current_offset_;
@@ -270,17 +284,14 @@ class NET_EXPORT_PRIVATE BbrSender : public SendAlgorithmInterface {
   // A window used to limit the number of bytes in flight during loss recovery.
   QuicByteCount recovery_window_;
 
-  // Indicates whether to always only increase the pacing rate during startup.
-  // Latches |FLAGS_quic_bbr_faster_startup|.
-  bool enforce_startup_pacing_rate_increase_;
-
   DISALLOW_COPY_AND_ASSIGN(BbrSender);
 };
 
-NET_EXPORT_PRIVATE std::ostream& operator<<(std::ostream& os,
-                                            const BbrSender::Mode& mode);
-NET_EXPORT_PRIVATE std::ostream& operator<<(std::ostream& os,
-                                            const BbrSender::DebugState& state);
+QUIC_EXPORT_PRIVATE std::ostream& operator<<(std::ostream& os,
+                                             const BbrSender::Mode& mode);
+QUIC_EXPORT_PRIVATE std::ostream& operator<<(
+    std::ostream& os,
+    const BbrSender::DebugState& state);
 
 }  // namespace net
 
